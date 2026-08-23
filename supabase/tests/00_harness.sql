@@ -8,6 +8,9 @@
 
 create schema if not exists auth;
 
+-- Supabase installs extensions here rather than in public.
+create schema if not exists extensions;
+
 create table if not exists auth.users (
   id uuid primary key default gen_random_uuid(),
   email text unique,

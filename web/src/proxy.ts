@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import type { Database } from "@/lib/types/database";
+import { DB_SCHEMA, type Database, type DbSchema } from "@/lib/types/database";
 import { DISCLAIMER_VERSION } from "@/lib/disclaimer";
 
 /**
@@ -31,10 +31,11 @@ function isPublic(pathname: string): boolean {
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
 
-  const supabase = createServerClient<Database>(
+  const supabase = createServerClient<Database, DbSchema>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
+      db: { schema: DB_SCHEMA },
       cookies: {
         getAll: () => request.cookies.getAll(),
         setAll: (cookiesToSet, headers) => {

@@ -7,14 +7,18 @@ project_id = "gymapp"
 [api]
 enabled = true
 port = 54321
-schemas = ["public"]
+# Gym App lives in `gymapp`, not `public` — the hosted project's public schema
+# belongs to other apps. The hosted equivalent of this line is
+# Dashboard → Settings → API → Exposed schemas.
+schemas = ["public", "gymapp"]
 extra_search_path = ["public", "extensions"]
 max_rows = 1000
 
 [db]
 port = 54322
 shadow_port = 54320
-major_version = 15
+# Matches the hosted project (Postgres 17.6).
+major_version = 17
 
 [studio]
 enabled = true

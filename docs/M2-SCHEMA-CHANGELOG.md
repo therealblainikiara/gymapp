@@ -1,8 +1,34 @@
 # M2 — Schema changelog
 
-`supabase/migrations/20260823000100_init.sql` is derived from the draft at
+The migrations in `supabase/migrations/` are derived from the draft at
 `project/supabase/0001_init.sql`. Everything below is a deliberate difference,
 with the reason. Nothing was changed for style.
+
+## Placement: the `gymapp` schema
+
+The draft creates its tables in `public`. The target project's `public` schema
+turned out to be shared by three unrelated apps — a squash competition system,
+a songwriting tool, and one more — across 40 tables, and it already has a
+`public.profiles`: not a user profile, but squash venue settings
+(`voice_referee`, `court_trace`, `booking_api_key`). `create table
+public.profiles` would simply have failed.
+
+Renaming that one table would have unblocked the migration, but Gym App also
+wants `events`, `weights` and `challenges`, which are generic enough to collide
+with whatever those apps add next. So everything moved to a `gymapp` schema.
+Two migrations cannot now reach each other's tables, and neither can a
+mistaken `delete from events`.
+
+The costs, both one-time: `gymapp` has to be in the project's PostgREST exposed
+schemas, and the Supabase clients pass `db: { schema: "gymapp" }`. Because
+Supabase's default privileges only cover `public`, the migration also issues
+its own `grant usage` and table grants — RLS is still what decides rows; the
+grants only decide whether PostgREST can see the table at all.
+
+`auth.users` is shared with the other apps, by agreement. The signup trigger is
+named `on_auth_user_created_gymapp` so it cannot be confused with another app's,
+and it fires for every signup in the project — one empty row per account, and
+one login works across apps.
 
 ## Security
 
@@ -105,6 +131,31 @@ what a person accepted, which is the entire reason the column exists.
 | `search_profiles(q)` | Named in the handoff, not present in the draft. Minimum two characters and handle-only discoverability, so it cannot be used to enumerate the user table. |
 | `friend_leaderboard(week_start)` | Server-computed totals for friends and challenge members. The handoff is explicit: "Server-computed; never trust client totals." |
 | `handle` format check + `events_user_date_idx` + `friendships_addressee_idx` | A unique text column with no shape, and the two lookups every screen makes. |
+
+## Second migration — `20260823001000_scope_policies_to_authenticated.sql`
+
+Applied after the first, in response to Supabase's own database linter flagging
+`auth_allow_anonymous_sign_ins` on all eight tables.
+
+The original policies were created without a `to` clause, which defaults to the
+`public` role and therefore also evaluates them for `anon`. That was safe —
+every predicate compares against `auth.uid()`, which is null for an anonymous
+request, so anon matched no rows, and that was verified against the live
+database before changing anything. But the safety was incidental rather than
+declared: it held only because every predicate happened to dereference
+`auth.uid()`, and a future policy that did not would have quietly opened the
+table.
+
+Now every policy says `to authenticated`, and anon's table grants are revoked
+outright — so a signed-out client is refused at the grant, before RLS is even
+consulted. Two independent layers, and eight fewer standing warnings on the
+project's security page.
+
+One thing this does *not* do: Supabase's anonymous sign-ins issue a real JWT
+under the same `authenticated` role, with `is_anonymous` in the claims. That
+feature is off for this project. If it is ever turned on, these policies need
+an explicit `auth.jwt() ->> 'is_anonymous' = 'false'` check as well — noted in
+the migration itself.
 
 ## Unchanged
 

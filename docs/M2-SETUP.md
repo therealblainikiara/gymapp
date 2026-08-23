@@ -1,7 +1,26 @@
 # M2 — Setup
 
 Everything needed to take this repository from a clone to a signed-in, syncing
-app. Roughly 15 minutes, most of it waiting on the Supabase dashboard.
+app.
+
+> **Status for project `ytyaouylcbathwyodpvi`:** both migrations are **already
+> applied**, and `gymapp` has been added to the PostgREST exposed schemas via
+> the `authenticator` role. Steps 3 and the first half of 4 are done. What is
+> still outstanding: confirming the exposed-schema setting in the dashboard
+> (see step 3a), the auth redirect URLs, and — separately — rotating the
+> service_role key that was shared in chat.
+
+## 0. Where the tables live
+
+Gym App uses its own **`gymapp` schema**, not `public`. That project's `public`
+schema is shared by three unrelated apps and already has a `profiles` table
+(squash venue settings). Two consequences:
+
+- `gymapp` must be in the project's PostgREST exposed schemas.
+- The Supabase clients are built with `db: { schema: "gymapp" }` — already done
+  in `src/lib/supabase/*` and `src/proxy.ts`.
+- In the dashboard's table editor, switch the schema dropdown from `public` to
+  `gymapp` or the tables look missing.
 
 ## 1. What you need
 
@@ -40,10 +59,28 @@ or, with the CLI linked (`supabase link --project-ref <ref>`):
 ./scripts/db-push.sh --cli
 ```
 
-This creates the tables, the `weekly_active_minutes` view, RLS policies, the
-signup trigger and the two security-definer RPCs. See
+This creates the `gymapp` schema, its eight tables, the
+`weekly_active_minutes` view, RLS policies, the signup trigger and the two
+security-definer RPCs. See
 [M2-SCHEMA-CHANGELOG.md](./M2-SCHEMA-CHANGELOG.md) for how it differs from the
 draft in `project/supabase/0001_init.sql`.
+
+### 3a. Expose the schema to the API
+
+PostgREST will not serve a schema it has not been told about. This has been set
+in-database already:
+
+```sql
+alter role authenticator set pgrst.db_schemas = 'public, graphql_public, gymapp';
+notify pgrst, 'reload config';
+```
+
+**Also set it in the dashboard** — Settings → API → *Exposed schemas* → add
+`gymapp`. The dashboard value is the durable one; the role setting above can be
+overwritten the next time any project API config changes, and when that happens
+every Gym App request starts returning `PGRST106 schema must be one of the
+following`. Setting both means the dashboard value simply confirms what is
+already there.
 
 To check the policies before or after pushing, run them against a scratch
 Postgres — no Supabase project involved:

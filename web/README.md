@@ -58,3 +58,7 @@ its variables; do not hard-code a value the tokens already carry.
   Change one, change the other.
 - **Never prefix a secret `NEXT_PUBLIC_`.** That prefix is what puts a value in
   the browser bundle.
+- **Tables live in the `gymapp` schema, not `public`.** The Supabase project is
+  shared with other apps and its `public.profiles` is something else entirely.
+  The clients pass `db: { schema: "gymapp" }`; in the Supabase dashboard's table
+  editor you have to switch the schema dropdown or the tables look missing.

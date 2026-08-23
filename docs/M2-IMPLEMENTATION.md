@@ -8,7 +8,8 @@ What was built for chunks C6–C9 of `project/docs/ECC-PLAN.md`, against
 
 ```
 supabase/
-  migrations/20260823000100_init.sql   C6 — schema, RLS, RPCs
+  migrations/…_gymapp_init.sql         C6 — the `gymapp` schema, RLS, RPCs
+  migrations/…_scope_policies_…sql     policies scoped to `authenticated`
   tests/00_harness.sql                 stand-in auth schema for local runs
   tests/01_rls.sql                     policy assertions
 scripts/
@@ -162,11 +163,32 @@ Run against real software in this session:
   `/sign-in` preserving `next`; `/sign-in` is server-rendered; `/api/coach`
   answers `401 {"error":"unauthenticated"}`; the manifest and icon serve.
 
-**Not verified — this container's network policy blocks `*.supabase.co`:**
+Run against the hosted project `ytyaouylcbathwyodpvi` (Postgres 17.6), through
+the Supabase MCP connector:
 
-- The migrations have not been applied to the hosted project, and no request
-  has reached it. The schema is proven against local Postgres only.
-- No magic link or Google sign-in has been exercised end to end.
+- **Both migrations applied.** Eight tables in `gymapp`, 13 policies, RLS on
+  all eight, four functions, and `weekly_active_minutes` carrying
+  `security_invoker=true`. `public.profiles` — the squash app's venue settings
+  — still has its original 19 columns and was not touched.
+- **Policies enforce on the live database.** Impersonating a signed-in user
+  (`set local role authenticated` + a JWT subject claim) returns zero rows from
+  every table; `search_profiles` still reports exactly
+  `TABLE(id uuid, display_name text, handle text)`; `authenticated` is refused
+  when writing `challenges`; `anon` is refused on every table and on the search
+  RPC.
+- **Types match reality.** Every column name and nullability in `gymapp` was
+  compared against `src/lib/types/database.ts` — exact match across all eight
+  tables and the view.
+
+**Still not verified — this container's network policy blocks `*.supabase.co`,
+so nothing has reached the project over HTTP:**
+
+- No magic link or Google sign-in has been exercised end to end, and the
+  redirect URLs are not configured yet.
+- PostgREST's view of the `gymapp` schema. The exposed-schemas setting was
+  applied as a role GUC with a config reload, but it could not be confirmed
+  with a REST call from here. If the first request returns `PGRST106`, set
+  *Exposed schemas* in the dashboard — see M2-SETUP.md step 3a.
 - The coach route has not called Anthropic (no key configured here).
 - **The milestone gate has not been run.** Script below.
 

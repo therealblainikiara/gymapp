@@ -1,18 +1,21 @@
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
-import type { Database } from "@/lib/types/database";
+import { DB_SCHEMA, type Database, type DbSchema } from "@/lib/types/database";
 import { supabasePublishableKey, supabaseUrl } from "@/lib/env";
 
 /**
  * Request-scoped client for server components, route handlers and actions.
  * Reads the session from cookies and writes refreshed tokens back.
+ *
+ * Pinned to the `gymapp` schema — see lib/types/database.ts.
  */
 export async function serverClient() {
   const store = await cookies();
-  return createServerClient<Database>(
+  return createServerClient<Database, DbSchema>(
     supabaseUrl(),
     supabasePublishableKey(),
     {
+      db: { schema: DB_SCHEMA },
       cookies: {
         getAll: () => store.getAll(),
         setAll: (cookiesToSet) => {

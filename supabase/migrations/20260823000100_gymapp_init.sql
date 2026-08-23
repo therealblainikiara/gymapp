@@ -8,14 +8,34 @@
 -- exposed every column of every profile (height, age, injuries, dietary
 -- requirements) to any signed-in user. Discovery goes through
 -- `search_profiles()` instead, which returns three columns and nothing else.
+--
+-- EVERYTHING LIVES IN THE `gymapp` SCHEMA. The target project's `public`
+-- schema is shared by three unrelated apps — a squash competition system, a
+-- songwriting tool, and one more — and already has its own `public.profiles`
+-- (venue settings: voice_referee, court_trace, booking_api_key). Gym App's
+-- table names (`events`, `weights`, `challenges`) are generic enough that
+-- sharing that namespace would collide sooner or later. A dedicated schema
+-- means this migration cannot touch another app's data, and another app's
+-- migration cannot touch ours.
+--
+-- Consequence: `gymapp` must be in the project's PostgREST exposed schemas
+-- (Dashboard → Settings → API → Exposed schemas), and the Supabase client is
+-- constructed with `db: { schema: "gymapp" }`. See docs/M2-SETUP.md.
 
-create extension if not exists "pgcrypto";
+create extension if not exists "pgcrypto" with schema extensions;
+
+create schema if not exists gymapp;
+
+-- Supabase's default privileges are configured for `public` only, so a new
+-- schema has to grant its own. RLS is still the gate — these grants are what
+-- let PostgREST reach the tables at all, not what decides who sees which row.
+grant usage on schema gymapp to anon, authenticated, service_role;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Tables
 -- ─────────────────────────────────────────────────────────────────────────────
 
-create table public.profiles (
+create table gymapp.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   display_name text,
   handle text unique
@@ -64,13 +84,13 @@ create table public.profiles (
     (disclaimer_accepted_at is null) = (disclaimer_version is null))
 );
 
-create table public.events (   -- workouts, walks, rides, sports; ALSO device-imported (M4)
+create table gymapp.events (   -- workouts, walks, rides, sports; ALSO device-imported (M4)
   -- The id is generated client-side so a retried outbox flush upserts the same
   -- row instead of inserting a duplicate. Manual rows carry external_id = null,
   -- and NULLs are distinct in a unique index, so the dedupe key below cannot
   -- protect them.
   id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references public.profiles(id) on delete cascade,
+  user_id uuid not null references gymapp.profiles(id) on delete cascade,
   date date not null,
   type text not null                                   -- Workout|Walk|Ride|Run|Swim|Squash|Tennis|Other sport
     check (type in ('Workout','Walk','Ride','Run','Swim','Squash','Tennis','Other sport')),
@@ -83,10 +103,10 @@ create table public.events (   -- workouts, walks, rides, sports; ALSO device-im
   created_at timestamptz not null default now(),
   unique (user_id, source, external_id)
 );
-create index events_user_date_idx on public.events (user_id, date desc);
+create index events_user_date_idx on gymapp.events (user_id, date desc);
 
-create table public.checkins (
-  user_id uuid not null references public.profiles(id) on delete cascade,
+create table gymapp.checkins (
+  user_id uuid not null references gymapp.profiles(id) on delete cascade,
   date date not null,
   sleep int not null check (sleep between 1 and 5),
   stress int not null check (stress between 1 and 5),
@@ -94,8 +114,8 @@ create table public.checkins (
   primary key (user_id, date)
 );
 
-create table public.weights (
-  user_id uuid not null references public.profiles(id) on delete cascade,
+create table gymapp.weights (
+  user_id uuid not null references gymapp.profiles(id) on delete cascade,
   date date not null,
   kg numeric not null check (kg between 20 and 300),
   source text not null default 'manual'
@@ -103,25 +123,25 @@ create table public.weights (
   primary key (user_id, date)
 );
 
-create table public.hydration (
-  user_id uuid not null references public.profiles(id) on delete cascade,
+create table gymapp.hydration (
+  user_id uuid not null references gymapp.profiles(id) on delete cascade,
   date date not null,
   ml int not null default 0 check (ml >= 0 and ml <= 20000),
   primary key (user_id, date)
 );
 
-create table public.friendships (                      -- C10
-  requester uuid not null references public.profiles(id) on delete cascade,
-  addressee uuid not null references public.profiles(id) on delete cascade,
+create table gymapp.friendships (                      -- C10
+  requester uuid not null references gymapp.profiles(id) on delete cascade,
+  addressee uuid not null references gymapp.profiles(id) on delete cascade,
   status text not null default 'pending'
     check (status in ('pending','accepted','blocked')),
   created_at timestamptz not null default now(),
   primary key (requester, addressee),
   check (requester <> addressee)
 );
-create index friendships_addressee_idx on public.friendships (addressee);
+create index friendships_addressee_idx on gymapp.friendships (addressee);
 
-create table public.challenges (                       -- C11: server-defined weekly challenges
+create table gymapp.challenges (                       -- C11: server-defined weekly challenges
   id uuid primary key default gen_random_uuid(),
   week_start date not null,                            -- always a Sunday
   metric text not null default 'active_minutes',
@@ -131,9 +151,9 @@ create table public.challenges (                       -- C11: server-defined we
   constraint week_start_is_sunday check (extract(dow from week_start) = 0)
 );
 
-create table public.challenge_members (
-  challenge_id uuid not null references public.challenges(id) on delete cascade,
-  user_id uuid not null references public.profiles(id) on delete cascade,
+create table gymapp.challenge_members (
+  challenge_id uuid not null references gymapp.challenges(id) on delete cascade,
+  user_id uuid not null references gymapp.profiles(id) on delete cascade,
   joined_at timestamptz not null default now(),
   primary key (challenge_id, user_id)
 );
@@ -146,20 +166,20 @@ create table public.challenge_members (
 -- security_invoker so the view honours the caller's RLS on `events`: through
 -- this view you see only your own minutes. Friends' minutes come from
 -- friend_leaderboard() below, which is the one deliberate, audited widening.
-create view public.weekly_active_minutes
+create view gymapp.weekly_active_minutes
   with (security_invoker = true) as
   select
     e.user_id,
     (date_trunc('week', (e.date + 1)::timestamp)::date - 1) as week_start,
     sum(e.minutes)::bigint as minutes
-  from public.events e
+  from gymapp.events e
   group by 1, 2;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Triggers
 -- ─────────────────────────────────────────────────────────────────────────────
 
-create function public.touch_updated_at() returns trigger
+create function gymapp.touch_updated_at() returns trigger
   language plpgsql
   set search_path = ''
 as $$
@@ -170,18 +190,23 @@ end;
 $$;
 
 create trigger profiles_touch_updated_at
-  before update on public.profiles
-  for each row execute function public.touch_updated_at();
+  before update on gymapp.profiles
+  for each row execute function gymapp.touch_updated_at();
 
 -- Every auth user gets a profile row immediately, so the disclaimer gate has
 -- something to write to and the client never has to branch on "no profile yet".
-create function public.handle_new_user() returns trigger
+--
+-- auth.users is shared with the other apps in this project, so this fires for
+-- their signups too. That is the agreed behaviour: it costs one empty row and
+-- means one person can use both apps with one login. The trigger is named for
+-- this app so it cannot be mistaken for another's.
+create function gymapp.handle_new_user() returns trigger
   language plpgsql
   security definer
   set search_path = ''
 as $$
 begin
-  insert into public.profiles (id, display_name)
+  insert into gymapp.profiles (id, display_name)
   values (
     new.id,
     coalesce(
@@ -195,70 +220,90 @@ begin
 end;
 $$;
 
-create trigger on_auth_user_created
+create trigger on_auth_user_created_gymapp
   after insert on auth.users
-  for each row execute function public.handle_new_user();
+  for each row execute function gymapp.handle_new_user();
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Row-level security
 -- ─────────────────────────────────────────────────────────────────────────────
 
-alter table public.profiles enable row level security;
-alter table public.events enable row level security;
-alter table public.checkins enable row level security;
-alter table public.weights enable row level security;
-alter table public.hydration enable row level security;
-alter table public.friendships enable row level security;
-alter table public.challenges enable row level security;
-alter table public.challenge_members enable row level security;
+alter table gymapp.profiles enable row level security;
+alter table gymapp.events enable row level security;
+alter table gymapp.checkins enable row level security;
+alter table gymapp.weights enable row level security;
+alter table gymapp.hydration enable row level security;
+alter table gymapp.friendships enable row level security;
+alter table gymapp.challenges enable row level security;
+alter table gymapp.challenge_members enable row level security;
 
 -- profiles: your row, and only your row. Discovery is search_profiles().
-create policy "own profile read" on public.profiles
+create policy "own profile read" on gymapp.profiles
   for select using ((select auth.uid()) = id);
-create policy "own profile insert" on public.profiles
+create policy "own profile insert" on gymapp.profiles
   for insert with check ((select auth.uid()) = id);
-create policy "own profile update" on public.profiles
+create policy "own profile update" on gymapp.profiles
   for update using ((select auth.uid()) = id)
   with check ((select auth.uid()) = id);
 
-create policy "own events" on public.events
+create policy "own events" on gymapp.events
   for all using ((select auth.uid()) = user_id)
   with check ((select auth.uid()) = user_id);
 
-create policy "own checkins" on public.checkins
+create policy "own checkins" on gymapp.checkins
   for all using ((select auth.uid()) = user_id)
   with check ((select auth.uid()) = user_id);
 
-create policy "own weights" on public.weights
+create policy "own weights" on gymapp.weights
   for all using ((select auth.uid()) = user_id)
   with check ((select auth.uid()) = user_id);
 
-create policy "own hydration" on public.hydration
+create policy "own hydration" on gymapp.hydration
   for all using ((select auth.uid()) = user_id)
   with check ((select auth.uid()) = user_id);
 
 -- friendships: both parties can read the row and either can remove it, but only
 -- the requester may create one (otherwise anyone could forge an inbound
 -- request from someone else) and only the addressee may change its status.
-create policy "friendship read" on public.friendships
+create policy "friendship read" on gymapp.friendships
   for select using ((select auth.uid()) in (requester, addressee));
-create policy "friendship request" on public.friendships
+create policy "friendship request" on gymapp.friendships
   for insert with check ((select auth.uid()) = requester and status = 'pending');
-create policy "friendship respond" on public.friendships
+create policy "friendship respond" on gymapp.friendships
   for update using ((select auth.uid()) = addressee)
   with check ((select auth.uid()) = addressee);
-create policy "friendship withdraw" on public.friendships
+create policy "friendship withdraw" on gymapp.friendships
   for delete using ((select auth.uid()) in (requester, addressee));
 
 -- challenges are server-defined reference data: readable by all signed-in
 -- users, writable by nobody through the API.
-create policy "challenges readable" on public.challenges
+create policy "challenges readable" on gymapp.challenges
   for select to authenticated using (true);
-revoke insert, update, delete on public.challenges from anon, authenticated;
 
-create policy "own membership" on public.challenge_members
+create policy "own membership" on gymapp.challenge_members
   for all using ((select auth.uid()) = user_id)
   with check ((select auth.uid()) = user_id);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Grants — RLS decides the rows, these decide whether PostgREST can see the
+-- table at all. Mirrors what Supabase grants by default in `public`.
+-- ─────────────────────────────────────────────────────────────────────────────
+
+grant select, insert, update, delete on
+  gymapp.profiles, gymapp.events, gymapp.checkins, gymapp.weights,
+  gymapp.hydration, gymapp.friendships, gymapp.challenge_members
+  to anon, authenticated, service_role;
+
+-- Reference data: readable through the API, never writable by a client.
+grant select on gymapp.challenges to anon, authenticated;
+grant select, insert, update, delete on gymapp.challenges to service_role;
+
+grant select on gymapp.weekly_active_minutes to anon, authenticated, service_role;
+
+alter default privileges in schema gymapp
+  grant select, insert, update, delete on tables to anon, authenticated, service_role;
+alter default privileges in schema gymapp
+  grant usage, select on sequences to anon, authenticated, service_role;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Security-definer RPCs — the only widenings, each returning a fixed projection
@@ -267,7 +312,7 @@ create policy "own membership" on public.challenge_members
 -- Partner search. Returns three columns; height, age, injuries and dietary
 -- requirements are not reachable through it. Only profiles that have set a
 -- handle are discoverable, which makes discovery opt-in.
-create function public.search_profiles(q text)
+create function gymapp.search_profiles(q text)
   returns table (id uuid, display_name text, handle text)
   language sql
   stable
@@ -275,7 +320,7 @@ create function public.search_profiles(q text)
   set search_path = ''
 as $$
   select p.id, p.display_name, p.handle
-  from public.profiles p
+  from gymapp.profiles p
   where (select auth.uid()) is not null
     and p.id <> (select auth.uid())
     and p.handle is not null
@@ -288,13 +333,13 @@ as $$
   limit 20;
 $$;
 
-revoke all on function public.search_profiles(text) from public, anon;
-grant execute on function public.search_profiles(text) to authenticated;
+revoke all on function gymapp.search_profiles(text) from public, anon;
+grant execute on function gymapp.search_profiles(text) to authenticated;
 
 -- Leaderboard for one week: you, your accepted friends, and anyone in the same
 -- challenge. Minutes are summed server-side from `events`; the client never
 -- reports a total. Raw events stay private — this returns only the sum.
-create function public.friend_leaderboard(week_start date)
+create function gymapp.friend_leaderboard(week_start date)
   returns table (user_id uuid, display_name text, handle text, minutes bigint)
   language sql
   stable
@@ -306,13 +351,13 @@ as $$
     select id from me
     union
     select case when f.requester = m.id then f.addressee else f.requester end
-    from public.friendships f, me m
+    from gymapp.friendships f, me m
     where f.status = 'accepted' and m.id in (f.requester, f.addressee)
     union
     select cm.user_id
-    from public.challenge_members cm, me m
+    from gymapp.challenge_members cm, me m
     where cm.challenge_id in (
-      select challenge_id from public.challenge_members where user_id = m.id
+      select challenge_id from gymapp.challenge_members where user_id = m.id
     )
   )
   select
@@ -321,8 +366,8 @@ as $$
     p.handle,
     coalesce(sum(e.minutes), 0)::bigint as minutes
   from visible v
-  join public.profiles p on p.id = v.id
-  left join public.events e
+  join gymapp.profiles p on p.id = v.id
+  left join gymapp.events e
     on e.user_id = p.id
    and e.date >= friend_leaderboard.week_start
    and e.date < friend_leaderboard.week_start + 7
@@ -331,5 +376,5 @@ as $$
   order by minutes desc, p.display_name nulls last;
 $$;
 
-revoke all on function public.friend_leaderboard(date) from public, anon;
-grant execute on function public.friend_leaderboard(date) to authenticated;
+revoke all on function gymapp.friend_leaderboard(date) from public, anon;
+grant execute on function gymapp.friend_leaderboard(date) to authenticated;

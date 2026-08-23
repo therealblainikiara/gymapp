@@ -1,10 +1,13 @@
 /**
- * Hand-written mirror of supabase/migrations/20260823000100_init.sql.
+ * Hand-written mirror of supabase/migrations/20260823000100_gymapp_init.sql.
+ *
+ * Everything lives in the `gymapp` schema, not `public` — the target project's
+ * public schema is shared with three unrelated apps and already has its own
+ * `profiles` table. The clients are constructed with `db: { schema: "gymapp" }`
+ * and the schema must be in the project's PostgREST exposed schemas.
  *
  * Regenerate with `npm run gen:types` once the project is linked; until then
- * this file is the contract. If you change a migration, change this too — the
- * schema test in src/lib/domain/__tests__ only checks the shapes the app uses,
- * not that they match the database.
+ * this file is the contract. If you change a migration, change this too.
  */
 
 export type Goal = "muscle" | "fat" | "strength" | "endurance" | "general";
@@ -133,7 +136,7 @@ type Table<Row, Insert = Row, Update = Partial<Row>> = {
 };
 
 export type Database = {
-  public: {
+  gymapp: {
     Tables: {
       profiles: Table<
         ProfileRow,
@@ -179,4 +182,8 @@ export type Database = {
     Enums: Record<never, never>;
     CompositeTypes: Record<never, never>;
   };
-}
+};
+
+/** The schema every table and RPC in this app lives in. */
+export const DB_SCHEMA = "gymapp" as const;
+export type DbSchema = typeof DB_SCHEMA;
