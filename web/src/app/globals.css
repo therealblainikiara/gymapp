@@ -1,0 +1,155 @@
+/* App shell styles. Every colour, font, space and radius comes from the
+   Industry token sheet — see industry.css and its readme. Nothing here
+   hard-codes a hex, a font name or a px value the tokens already carry. */
+@import "./industry.css";
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+}
+a {
+  color: var(--color-accent);
+}
+a:hover {
+  color: var(--color-accent-700);
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes breathe {
+  0% {
+    transform: scale(0.68);
+  }
+  25% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1);
+  }
+  75% {
+    transform: scale(0.68);
+  }
+  100% {
+    transform: scale(0.68);
+  }
+}
+@keyframes bdyDip {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(26px);
+  }
+}
+@keyframes bdyLegBend {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(0.72);
+  }
+}
+@keyframes bdyArmFwd {
+  0%,
+  100% {
+    transform: rotate(62deg);
+  }
+  50% {
+    transform: rotate(78deg);
+  }
+}
+@keyframes bdyPress {
+  0%,
+  100% {
+    transform: rotate(138deg);
+  }
+  50% {
+    transform: rotate(178deg);
+  }
+}
+@keyframes bdyCurl {
+  0%,
+  100% {
+    transform: rotate(6deg);
+  }
+  50% {
+    transform: rotate(118deg);
+  }
+}
+@keyframes bdyRow {
+  0%,
+  100% {
+    transform: rotate(38deg);
+  }
+  50% {
+    transform: rotate(95deg);
+  }
+}
+@keyframes bdyBob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(9px);
+  }
+}
+@keyframes bdySwing {
+  0%,
+  100% {
+    transform: rotate(15deg);
+  }
+  50% {
+    transform: rotate(-15deg);
+  }
+}
+@keyframes bdySwingR {
+  0%,
+  100% {
+    transform: rotate(-15deg);
+  }
+  50% {
+    transform: rotate(15deg);
+  }
+}
+
+/* Adaptive nav: side rail on desktop, bottom tabs on phone. */
+.gym-rail {
+  display: none;
+}
+@media (min-width: 920px) {
+  .gym-rail {
+    display: flex;
+  }
+  .gym-tabs {
+    display: none;
+  }
+}
+
+/* The prototype's plan rows highlight on hover; DC expressed this as a
+   style-hover attribute, which has no HTML equivalent. */
+.gym-exrow:hover {
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+}
+
+/* Buttons that are really list rows — the prototype used `all:unset`. */
+.gym-rowbtn {
+  all: unset;
+  cursor: pointer;
+  box-sizing: border-box;
+  font-family: var(--font-body);
+}
+.gym-rowbtn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}

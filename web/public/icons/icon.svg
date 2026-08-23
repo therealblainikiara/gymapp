@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192" role="img" aria-label="Gym App">
+  <!-- Industry system: light ground, steel accent, square corners, registration marks. -->
+  <rect width="192" height="192" fill="#f2f2f3"/>
+  <g stroke="#1d1f20" stroke-opacity="0.35" stroke-width="2">
+    <path d="M24 16v16M16 24h16M168 16v16M160 24h16M24 160v16M16 168h16M168 160v16M160 168h16"/>
+  </g>
+  <rect x="24" y="24" width="144" height="144" fill="none" stroke="#1d1f20" stroke-opacity="0.16" stroke-width="2"/>
+  <!-- Dumbbell -->
+  <g fill="#5980a6">
+    <rect x="44" y="84" width="16" height="24"/>
+    <rect x="60" y="72" width="18" height="48"/>
+    <rect x="78" y="90" width="36" height="12"/>
+    <rect x="114" y="72" width="18" height="48"/>
+    <rect x="132" y="84" width="16" height="24"/>
+  </g>
+</svg>
