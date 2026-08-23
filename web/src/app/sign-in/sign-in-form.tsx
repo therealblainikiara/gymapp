@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { browserClient } from "@/lib/supabase/client";
 import { Card, Kicker } from "@/components/ui";
+import { describeAuthError } from "@/lib/auth-errors";
 
 /**
  * Whether to offer the Google button at all.
@@ -34,6 +35,7 @@ export default function SignInForm({
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(initialError);
+  const [hint, setHint] = useState<string | null>(null);
 
   function callbackUrl() {
     return `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
@@ -43,13 +45,19 @@ export default function SignInForm({
     e.preventDefault();
     setBusy(true);
     setError(null);
+    setHint(null);
     const { error } = await browserClient().auth.signInWithOtp({
       email: email.trim(),
       options: { emailRedirectTo: callbackUrl() },
     });
     setBusy(false);
-    if (error) setError(error.message);
-    else setSent(true);
+    if (error) {
+      const described = describeAuthError(error.message, error.code);
+      setError(described.text);
+      setHint(described.hint ?? null);
+      return;
+    }
+    setSent(true);
   }
 
   async function google() {
@@ -61,14 +69,9 @@ export default function SignInForm({
     });
     if (error) {
       setBusy(false);
-      // Translate the one failure a user can actually hit here. Supabase's own
-      // wording ("Unsupported provider") sounds like the app does not support
-      // Google, when the truth is that this project has not switched it on.
-      setError(
-        /provider is not enabled/i.test(error.message)
-          ? "Google sign-in isn’t switched on for this app yet — use the email link above."
-          : error.message,
-      );
+      const described = describeAuthError(error.message, error.code);
+      setError(described.text);
+      setHint(described.hint ?? null);
     }
   }
 
@@ -186,6 +189,11 @@ export default function SignInForm({
             role="alert"
           >
             {error}
+          </p>
+        )}
+        {hint && (
+          <p className="card-meta" style={{ margin: "-8px 0 0" }}>
+            {hint}
           </p>
         )}
 
