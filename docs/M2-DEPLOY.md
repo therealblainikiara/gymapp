@@ -51,19 +51,23 @@ your callback, and the code is never exchanged for a session.
 domain:
 
 ```
-https://gymapp-blainikiara-1051s-projects.vercel.app
+https://gymapp-two-phi.vercel.app
 ```
 
-Check the exact value in Vercel → Project → Settings → Domains and use the one
-marked Production **without** a random hash in it. A per-deployment hostname
-like `gymapp-p8n8qo6d1-…` is a different URL on every single push, so anything
-pinned to it is stale the moment you deploy again.
+That is the **Domains** entry on the project Overview — the stable Production
+alias. Vercel picked `two-phi` because `gymapp.vercel.app` was already taken,
+so it is not guessable; read it off the dashboard rather than assuming.
+
+Do **not** use the deployment hostname
+(`gymapp-<hash>-blainikiara-1051s-projects.vercel.app`). That hash changes on
+every single push — it went from `p8n8qo6d1` to `8lt09n975` across two
+deploys — so anything pinned to it is stale as soon as you deploy again.
 
 **Redirect URLs** — three entries:
 
 ```
 http://localhost:3000/auth/callback
-https://gymapp-blainikiara-1051s-projects.vercel.app/auth/callback
+https://gymapp-two-phi.vercel.app/auth/callback
 https://gymapp-*-blainikiara-1051s-projects.vercel.app/auth/callback
 ```
 
