@@ -45,3 +45,37 @@ describe("auth error messages", () => {
     expect(describeAuthError("Some novel failure").hint).toBeUndefined();
   });
 });
+
+describe("magic-link click failures", () => {
+  it("explains the PKCE cross-browser case in terms of what to do", () => {
+    // The most common way a link that arrived fine still fails on click.
+    const r = describeAuthError(
+      "invalid request: both auth code and code verifier should be non-empty",
+    );
+    expect(r.text).toMatch(/same browser/i);
+    expect(r.hint).toMatch(/request a new link/i);
+    expect(r.text).not.toMatch(/code verifier/i);
+  });
+
+  it("covers a mismatched code challenge too", () => {
+    expect(
+      describeAuthError("code challenge does not match previously saved code verifier")
+        .text,
+    ).toMatch(/same browser/i);
+  });
+
+  it("treats an expired and an already-used link the same way", () => {
+    for (const msg of [
+      "Email link is invalid or has expired",
+      "One-time token not found",
+    ]) {
+      const r = describeAuthError(msg);
+      expect(r.text).toMatch(/expired or was already used/i);
+      // Email scanners consume links by previewing them, which is worth saying.
+      expect(r.hint).toMatch(/single-use|previewing/i);
+    }
+    expect(describeAuthError("access denied", "otp_expired").text).toMatch(
+      /expired or was already used/i,
+    );
+  });
+});
