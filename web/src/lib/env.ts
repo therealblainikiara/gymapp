@@ -31,6 +31,9 @@ export const supabaseSecretKey = () =>
 
 export const anthropicApiKey = () => process.env.ANTHROPIC_API_KEY;
 
-/** Public origin, used to build magic-link and OAuth redirect URLs. */
-export const siteUrl = () =>
-  process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+// There is deliberately no configured site URL. Every absolute URL this app
+// builds comes from the request it is serving — `window.location.origin` in
+// the browser, `request.nextUrl.origin` on the server — so localhost, a Vercel
+// preview deployment and production all work with no per-environment value to
+// set or to get wrong. The only place origins have to be listed is Supabase's
+// redirect allowlist; see docs/M2-DEPLOY.md.

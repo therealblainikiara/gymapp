@@ -136,9 +136,7 @@ PGHOST=/var/run/postgresql ./scripts/db-test.sh
 
 ## Deploying
 
-Set the same environment variables in the host, with
-`NEXT_PUBLIC_SITE_URL` pointing at the real origin, and add
-`<origin>/auth/callback` to the Supabase redirect allowlist.
+See [M2-DEPLOY.md](./M2-DEPLOY.md) — push to `main` publishes via Vercel.
 
 One thing to know about the gate: it runs a `profiles` query on every
 navigation. That is the deliberate cost of enforcing the disclaimer at the edge
