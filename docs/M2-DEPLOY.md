@@ -44,19 +44,44 @@ needed by the weekly-challenge job in M3.
 ### 3. Supabase redirect URLs
 
 Dashboard → Authentication → URL Configuration. Magic links fail silently
-without this.
+without this — the link verifies, Supabase redirects to the Site URL instead of
+your callback, and the code is never exchanged for a session.
 
-- **Site URL:** `https://<your-project>.vercel.app`
-- **Redirect URLs** — add all three:
-  ```
-  http://localhost:3000/auth/callback
-  https://<your-project>.vercel.app/auth/callback
-  https://<your-project>-*.vercel.app/auth/callback
-  ```
+**Site URL** — must include the scheme, and must be the *stable* production
+domain:
 
-The third line is the one people miss. Every preview deployment gets its own
-hostname, so without a wildcard entry, sign-in works in production and fails on
-every PR preview.
+```
+https://gymapp-blainikiara-1051s-projects.vercel.app
+```
+
+Check the exact value in Vercel → Project → Settings → Domains and use the one
+marked Production **without** a random hash in it. A per-deployment hostname
+like `gymapp-p8n8qo6d1-…` is a different URL on every single push, so anything
+pinned to it is stale the moment you deploy again.
+
+**Redirect URLs** — three entries:
+
+```
+http://localhost:3000/auth/callback
+https://gymapp-blainikiara-1051s-projects.vercel.app/auth/callback
+https://gymapp-*-blainikiara-1051s-projects.vercel.app/auth/callback
+```
+
+#### How the wildcard actually matches
+
+Supabase treats **`.` and `/` as separators**, and `*` matches any run of
+*non-separator* characters. So the `*` above stands in for the deployment hash
+and nothing else — which is exactly what varies between previews.
+
+Two ways to get this wrong, both of which look plausible:
+
+| Pattern | Problem |
+|---|---|
+| `https://gymapp-p8n8qo6d1-*.vercel.app/auth/callback` | Pins the hash. Matches today's deployment and no future one. |
+| `https://*.vercel.app/auth/callback` | Fails — `*` cannot cross the dots, and it would be far too broad if it could. |
+
+Without a correct wildcard, sign-in works in production and fails on every PR
+preview.
 
 ### 4. Custom domain (optional)
 
