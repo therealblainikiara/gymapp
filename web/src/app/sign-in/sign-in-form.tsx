@@ -5,6 +5,20 @@ import { browserClient } from "@/lib/supabase/client";
 import { Card, Kicker } from "@/components/ui";
 
 /**
+ * Whether to offer the Google button at all.
+ *
+ * Enabling a provider is a Supabase dashboard action, and clicking a button for
+ * a provider that is not enabled gets a raw
+ * `Unsupported provider: provider is not enabled` — which reads like the app is
+ * broken rather than like a setting is missing. Offering only what actually
+ * works is better than explaining a failure well.
+ *
+ * Set NEXT_PUBLIC_ENABLE_GOOGLE_AUTH=true once Google is configured in
+ * Dashboard → Authentication → Providers.
+ */
+const GOOGLE_ENABLED = process.env.NEXT_PUBLIC_ENABLE_GOOGLE_AUTH === "true";
+
+/**
  * Email magic link + Google, per C7. No password field: passwords are a
  * support burden and a breach liability for an app whose whole value is a
  * synced plan, and the user never asked for one.
@@ -47,7 +61,14 @@ export default function SignInForm({
     });
     if (error) {
       setBusy(false);
-      setError(error.message);
+      // Translate the one failure a user can actually hit here. Supabase's own
+      // wording ("Unsupported provider") sounds like the app does not support
+      // Google, when the truth is that this project has not switched it on.
+      setError(
+        /provider is not enabled/i.test(error.message)
+          ? "Google sign-in isn’t switched on for this app yet — use the email link above."
+          : error.message,
+      );
     }
   }
 
@@ -117,31 +138,43 @@ export default function SignInForm({
           </form>
         )}
 
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            margin: "2px 0",
-          }}
-        >
-          <span
-            style={{ flex: 1, height: 1, background: "var(--color-divider)" }}
-          />
-          <span className="card-meta">OR</span>
-          <span
-            style={{ flex: 1, height: 1, background: "var(--color-divider)" }}
-          />
-        </div>
+        {GOOGLE_ENABLED && (
+          <>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                margin: "2px 0",
+              }}
+            >
+              <span
+                style={{
+                  flex: 1,
+                  height: 1,
+                  background: "var(--color-divider)",
+                }}
+              />
+              <span className="card-meta">OR</span>
+              <span
+                style={{
+                  flex: 1,
+                  height: 1,
+                  background: "var(--color-divider)",
+                }}
+              />
+            </div>
 
-        <button
-          type="button"
-          onClick={google}
-          className="btn btn-secondary btn-block"
-          disabled={busy}
-        >
-          Continue with Google
-        </button>
+            <button
+              type="button"
+              onClick={google}
+              className="btn btn-secondary btn-block"
+              disabled={busy}
+            >
+              Continue with Google
+            </button>
+          </>
+        )}
 
         {error && (
           <p

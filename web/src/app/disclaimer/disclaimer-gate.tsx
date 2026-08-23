@@ -48,13 +48,19 @@ export default function DisclaimerGate({
       setError("Your session expired. Sign in again to continue.");
       return;
     }
-    const { error } = await supabase
-      .from("profiles")
-      .update({
+    // upsert, not update. An UPDATE that matches no row is not an error in
+    // PostgREST — it reports success — so if the profile row is missing the
+    // user is bounced straight back here by the proxy, forever, with nothing
+    // shown to explain it. Accounts created before the signup trigger existed
+    // hit exactly that. Upserting makes the row appear and the gate open.
+    const { error } = await supabase.from("profiles").upsert(
+      {
+        id: user.id,
         disclaimer_accepted_at: new Date().toISOString(),
         disclaimer_version: DISCLAIMER_VERSION,
-      })
-      .eq("id", user.id);
+      },
+      { onConflict: "id" },
+    );
     if (error) {
       setBusy(false);
       setError(error.message);

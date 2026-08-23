@@ -136,10 +136,17 @@ export default function IntakeWizard({
     setBusy(true);
     setError(null);
     const supabase = browserClient();
-    const { error } = await supabase
-      .from("profiles")
-      .update({ ...draft, intake_completed_at: new Date().toISOString() })
-      .eq("id", userId);
+    // upsert for the same reason as the disclaimer gate: a zero-row UPDATE
+    // reports success, so a missing profile row would silently drop the whole
+    // questionnaire and bounce the user back to step one.
+    const { error } = await supabase.from("profiles").upsert(
+      {
+        id: userId,
+        ...draft,
+        intake_completed_at: new Date().toISOString(),
+      },
+      { onConflict: "id" },
+    );
     if (error) {
       setBusy(false);
       setError(error.message);
