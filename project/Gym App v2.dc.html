@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/industry-0dab36ca-261d-47b1-8bce-360143a38f11/styles.css">
+  <script src="_ds/industry-0dab36ca-261d-47b1-8bce-360143a38f11/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;background:var(--color-bg)}
+    a{color:var(--color-accent)} a:hover{color:var(--color-accent-700)}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+    @keyframes breathe{0%{transform:scale(.68)}25%{transform:scale(1)}50%{transform:scale(1)}75%{transform:scale(.68)}100%{transform:scale(.68)}}
+    @keyframes bdyDip{0%,100%{transform:translateY(0)}50%{transform:translateY(26px)}}
+    @keyframes bdyLegBend{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.72)}}
+    @keyframes bdyArmFwd{0%,100%{transform:rotate(62deg)}50%{transform:rotate(78deg)}}
+    @keyframes bdyPress{0%,100%{transform:rotate(138deg)}50%{transform:rotate(178deg)}}
+    @keyframes bdyCurl{0%,100%{transform:rotate(6deg)}50%{transform:rotate(118deg)}}
+    @keyframes bdyRow{0%,100%{transform:rotate(38deg)}50%{transform:rotate(95deg)}}
+    @keyframes bdyBob{0%,100%{transform:translateY(0)}50%{transform:translateY(9px)}}
+    @keyframes bdySwing{0%,100%{transform:rotate(15deg)}50%{transform:rotate(-15deg)}}
+    @keyframes bdySwingR{0%,100%{transform:rotate(-15deg)}50%{transform:rotate(15deg)}}
+    .gym-rail{display:none}
+    @media(min-width:920px){.gym-rail{display:flex}.gym-tabs{display:none}}
+  </style>
+</helmet>
+
+<sc-if value="{{ showDisclaimer }}" hint-placeholder-val="{{ false }}">
+  <div style="min-height:100vh;display:grid;place-items:center;padding:24px;box-sizing:border-box">
+    <div class="card blueprint elev-md" style="max-width:640px;padding:26px;gap:14px;animation:fadeUp .35s both">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <span class="card-kicker" style="font-size:11px">GYM APP — BEFORE YOU START</span>
+      <h2 style="margin:0;text-transform:uppercase">Health & liability disclaimer</h2>
+      <div style="max-height:260px;overflow:auto;border:1px solid var(--color-divider);padding:14px;font-size:13px;line-height:1.6">
+        <p><strong>Read carefully — use of this app is at your own risk.</strong></p>
+        <p>Gym App provides general fitness and nutrition information for educational purposes only. It is <strong>not medical advice</strong>, and it is not a substitute for consultation with a qualified physician, physiotherapist, or registered dietitian.</p>
+        <p><strong>1. Consult a professional first.</strong> Before beginning this or any exercise or nutrition programme — especially if you are over 40, have an injury, a heart condition, high blood pressure, diabetes, are pregnant, or have any other medical condition — consult your doctor.</p>
+        <p><strong>2. Assumption of risk.</strong> Physical exercise carries inherent risk of injury, including serious injury or death. By using this app you voluntarily accept and assume all such risk, and all responsibility for your own health, safety, technique, equipment and surroundings.</p>
+        <p><strong>3. No liability.</strong> To the maximum extent permitted by law, the designer, developer and publisher of this app accept no liability whatsoever for any injury, illness, allergic reaction, loss or damage of any kind, direct or indirect, arising from or connected to your use of this app, its workout plans, meal suggestions or camera feedback.</p>
+        <p><strong>4. Dietary information.</strong> Meal suggestions and dietary tags (including lactose-free, gluten-free and nut-free labels) are indicative only. Always check ingredient labels yourself. If you have an allergy or intolerance, you are solely responsible for verifying every food is safe for you.</p>
+        <p><strong>5. Simulated feedback.</strong> Rep counting, form feedback and device readings in this prototype are simulated and must not be relied upon for safety decisions.</p>
+        <p><strong>6. Stop if unwell.</strong> Stop exercising immediately and seek medical attention if you feel pain, dizziness, chest discomfort or shortness of breath.</p>
+        <p>By continuing you confirm you have read, understood and accept these terms in full, and release the app designer from any and all claims.</p>
+      </div>
+      <label class="radio" style="align-items:flex-start;gap:10px">
+        <input type="checkbox" checked="{{ discChecked }}" onChange="{{ toggleDisc }}">
+        <span class="dot" style="border-radius:0;background:{{ discBoxBg }};border-color:{{ discBoxBc }}"></span>
+        <span style="font-size:13.5px">I have read and accept the disclaimer. I use Gym App entirely at my own risk and accept all responsibility for my health and safety.</span>
+      </label>
+      <button onClick="{{ acceptDisc }}" disabled="{{ discBtnDisabled }}" class="btn btn-primary btn-block">Accept & continue</button>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ showWizard }}" hint-placeholder-val="{{ false }}">
+  <div style="min-height:100vh;display:grid;place-items:center;padding:24px;box-sizing:border-box">
+    <div class="card blueprint elev-md" style="width:100%;max-width:620px;padding:26px;gap:16px;animation:fadeUp .35s both">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <span class="card-kicker" style="font-size:11px">BUILDING YOUR PLAN — {{ obStepLabel }}</span>
+        <span class="card-meta">GYM APP INTAKE</span>
+      </div>
+      <div style="height:3px;border:1px solid var(--color-divider)"><div style="height:100%;background:var(--color-accent);width:{{ obPct }};transition:width .3s"></div></div>
+
+      <sc-if value="{{ obS0 }}" hint-placeholder-val="{{ true }}">
+        <h3 style="margin:0;text-transform:uppercase">Your week, honestly</h3>
+        <p class="text-muted" style="margin:0;font-size:14px">Around work and other commitments — which days can you realistically train? Pick the days that usually stay free. Your plan schedules sessions only on these days; the rest become recovery days.</p>
+        <div style="display:flex;gap:7px;flex-wrap:wrap">
+          <sc-for list="{{ availOpts }}" as="d" hint-placeholder-count="7">
+            <button data-d="{{ d.i }}" onClick="{{ toggleAvail }}" class="btn" style="width:64px;flex-direction:column;gap:0;padding:8px 0;background:{{ d.bg }};color:{{ d.fg }};border-color:{{ d.bc }}">{{ d.label }}</button>
+          </sc-for>
+        </div>
+        <span class="card-meta">{{ availSummary }}</span>
+      </sc-if>
+
+      <sc-if value="{{ obS1 }}" hint-placeholder-val="{{ false }}">
+        <h3 style="margin:0;text-transform:uppercase">When, and for how long</h3>
+        <p class="text-muted" style="margin:0;font-size:14px">When do you prefer to exercise, and how much time will you honestly give per day? Short and consistent beats long and abandoned.</p>
+        <div style="display:flex;flex-direction:column;gap:6px"><h6 style="margin:0">Preferred time</h6>
+          <div class="seg"><sc-for list="{{ timeOpts }}" as="o" hint-placeholder-count="3"><label class="seg-opt"><input type="radio" name="ptime" value="{{ o.id }}" checked="{{ o.active }}" onChange="{{ setPrefTime }}">{{ o.label }}</label></sc-for></div></div>
+        <div style="display:flex;flex-direction:column;gap:6px"><h6 style="margin:0">Time per day</h6>
+          <div class="seg"><sc-for list="{{ lenOpts }}" as="o" hint-placeholder-count="5"><label class="seg-opt"><input type="radio" name="len" value="{{ o.id }}" checked="{{ o.active }}" onChange="{{ setLen }}">{{ o.label }}</label></sc-for></div></div>
+      </sc-if>
+
+      <sc-if value="{{ obS2 }}" hint-placeholder-val="{{ false }}">
+        <h3 style="margin:0;text-transform:uppercase">Your goal</h3>
+        <p class="text-muted" style="margin:0;font-size:14px">One primary goal. Everything — sets, reps, rests, calories — is drafted from this.</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px">
+          <sc-for list="{{ goalOpts }}" as="g" hint-placeholder-count="5">
+            <button data-id="{{ g.id }}" onClick="{{ setGoal }}" class="btn" style="flex-direction:column;align-items:flex-start;gap:1px;padding:9px 12px;background:{{ g.bg }};color:{{ g.fg }};border-color:{{ g.bc }}">
+              <span style="font-size:15px">{{ g.label }}</span><span style="font-family:var(--font-body);font-weight:400;font-size:11.5px;opacity:0.72;text-align:left">{{ g.desc }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ obS3 }}" hint-placeholder-val="{{ false }}">
+        <h3 style="margin:0;text-transform:uppercase">Focus & injuries</h3>
+        <p class="text-muted" style="margin:0;font-size:14px">What do you want to work on — and just as important, what should the plan work <em>around</em>? Exercises that load an injured area are removed automatically.</p>
+        <div style="display:flex;flex-direction:column;gap:6px"><h6 style="margin:0">Areas to work on <span class="text-muted" style="font-weight:400;text-transform:none;letter-spacing:0">— none = full body</span></h6>
+          <div style="display:flex;flex-wrap:wrap;gap:7px"><sc-for list="{{ muscleOpts }}" as="m" hint-placeholder-count="7"><button data-id="{{ m.id }}" onClick="{{ toggleMuscle }}" class="btn" style="padding:4px 11px;font-size:12.5px;background:{{ m.bg }};color:{{ m.fg }};border-color:{{ m.bc }}">{{ m.label }}</button></sc-for></div></div>
+        <div style="display:flex;flex-direction:column;gap:6px"><h6 style="margin:0">Current injuries or sensitive areas</h6>
+          <div style="display:flex;flex-wrap:wrap;gap:7px"><sc-for list="{{ injuryOpts }}" as="m" hint-placeholder-count="4"><button data-id="{{ m.id }}" onClick="{{ toggleInjury }}" class="btn" style="padding:4px 11px;font-size:12.5px;background:{{ m.bg }};color:{{ m.fg }};border-color:{{ m.bc }}">{{ m.label }}</button></sc-for></div>
+          <span class="card-meta">A flagged area filters out exercises that load it. Still consult a professional about any injury.</span></div>
+      </sc-if>
+
+      <sc-if value="{{ obS4 }}" hint-placeholder-val="{{ false }}">
+        <h3 style="margin:0;text-transform:uppercase">Dietary requirements</h3>
+        <p class="text-muted" style="margin:0;font-size:14px">These are treated as <strong>health requirements, not preferences</strong> — meals that don't comply are removed entirely, never just deprioritised. Always verify labels yourself.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:7px">
+          <sc-for list="{{ dietaryOpts }}" as="m" hint-placeholder-count="4">
+            <button data-id="{{ m.id }}" onClick="{{ toggleDietary }}" class="btn" style="padding:6px 13px;font-size:13px;background:{{ m.bg }};color:{{ m.fg }};border-color:{{ m.bc }}">{{ m.label }}</button>
+          </sc-for>
+        </div>
+        <span class="card-meta">{{ dietarySummary }}</span>
+      </sc-if>
+
+      <sc-if value="{{ obS5 }}" hint-placeholder-val="{{ false }}">
+        <h3 style="margin:0;text-transform:uppercase">Equipment & experience</h3>
+        <p class="text-muted" style="margin:0;font-size:14px">What's actually available to you, and where are you starting from?</p>
+        <div style="display:flex;flex-wrap:wrap;gap:16px">
+          <div style="display:flex;flex-direction:column;gap:6px"><h6 style="margin:0">Equipment</h6>
+            <div class="seg"><sc-for list="{{ kitOpts }}" as="o" hint-placeholder-count="2"><label class="seg-opt"><input type="radio" name="kit" value="{{ o.id }}" checked="{{ o.active }}" onChange="{{ setKit }}">{{ o.label }}</label></sc-for></div></div>
+          <div style="display:flex;flex-direction:column;gap:6px"><h6 style="margin:0">Level</h6>
+            <div class="seg"><sc-for list="{{ levelOpts }}" as="o" hint-placeholder-count="3"><label class="seg-opt"><input type="radio" name="level" value="{{ o.id }}" checked="{{ o.active }}" onChange="{{ setLevel }}">{{ o.label }}</label></sc-for></div></div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ obS6 }}" hint-placeholder-val="{{ false }}">
+        <h3 style="margin:0;text-transform:uppercase">Connect your devices</h3>
+        <p class="text-muted" style="margin:0;font-size:14px">Link a watch, phone or smart scale to sync steps, heart rate, sleep and weight. Optional — you can do this later in Settings.</p>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <sc-for list="{{ deviceRows }}" as="dev" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;gap:10px;border:1px solid var(--color-divider);padding:10px 12px">
+              <div style="flex:1;min-width:0"><div style="font-family:var(--font-heading);font-weight:600;font-size:15px">{{ dev.n }}</div><div class="card-meta">{{ dev.d }}</div></div>
+              <span class="tag {{ dev.tagClass }}">{{ dev.status }}</span>
+              <button data-id="{{ dev.id }}" onClick="{{ connectDevice }}" class="btn btn-secondary" style="font-size:12.5px;padding:4px 10px">{{ dev.btn }}</button>
+            </div>
+          </sc-for>
+        </div>
+        <div style="border:1px solid var(--color-divider);padding:12px;font-size:13px">
+          <span class="card-kicker">YOUR PLAN SUMMARY</span>
+          <p style="margin:6px 0 0">{{ obSummary }}</p>
+        </div>
+      </sc-if>
+
+      <div style="display:flex;gap:8px;justify-content:space-between;margin-top:4px">
+        <button onClick="{{ obBack }}" class="btn btn-secondary" style="visibility:{{ obBackVis }}">← Back</button>
+        <sc-if value="{{ obNotLast }}" hint-placeholder-val="{{ true }}"><button onClick="{{ obNext }}" disabled="{{ obNextDisabled }}" class="btn btn-primary">Next →</button></sc-if>
+        <sc-if value="{{ obLast }}" hint-placeholder-val="{{ false }}"><button onClick="{{ obFinish }}" class="btn btn-primary">Build my plan ✓</button></sc-if>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ showApp }}" hint-placeholder-val="{{ true }}">
+<div style="min-height:100vh;display:flex;align-items:stretch">
+  <div class="gym-rail" style="flex-direction:column;gap:4px;width:190px;flex:none;border-right:1px solid var(--color-divider);padding:18px 12px;position:sticky;top:0;height:100vh;box-sizing:border-box">
+    <span style="font-family:var(--font-heading);font-weight:600;font-size:19px;letter-spacing:0.05em;padding:0 10px 14px">GYM APP</span>
+    <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="6">
+      <button data-id="{{ n.id }}" onClick="{{ setNav }}" class="btn" style="justify-content:flex-start;width:100%;border-color:transparent;font-size:14px;letter-spacing:0.05em;padding:8px 10px;background:{{ n.bg }};color:{{ n.fg }};transition:background .15s,color .15s">{{ n.label }}</button>
+    </sc-for>
+    <div style="flex:1"></div>
+    <button onClick="{{ openCamHome }}" class="btn btn-primary" style="width:100%"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"></path><circle cx="12" cy="13" r="3"></circle></svg> Live workout</button>
+    <span class="card-meta" style="padding:12px 10px 0">SHEET 02 / REV C</span>
+  </div>
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+    <div class="nav" style="border-bottom:1px solid var(--color-divider);padding:12px 18px">
+      <span class="nav-brand" style="font-size:16px;letter-spacing:0.05em">{{ screenTitle }}</span>
+      <span class="tag tag-outline">STREAK {{ streak }}</span>
+      <span class="tag tag-neutral">{{ todayLabel }}</span>
+    </div>
+    <div style="flex:1;padding:18px;max-width:1100px;width:100%;margin:0 auto;box-sizing:border-box;padding-bottom:84px">
+
+      <sc-if value="{{ showHome }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:16px;animation:fadeUp .3s both">
+          <div style="display:flex;justify-content:space-between;align-items:center;border:1px solid var(--color-divider);padding:8px 6px">
+            <sc-for list="{{ weekDays }}" as="w" hint-placeholder-count="7">
+              <div style="flex:1;text-align:center">
+                <div class="card-meta">{{ w.d }}</div>
+                <div style="font-family:var(--font-heading);font-weight:600;width:26px;height:26px;line-height:26px;margin:2px auto 0;background:{{ w.bg }};color:{{ w.fg }};opacity:{{ w.op }}">{{ w.n }}</div>
+                <div class="card-meta" style="font-size:9px;letter-spacing:0.06em">{{ w.k }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <sc-if value="{{ anyDevice }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:16px;border:1px solid var(--color-divider);padding:9px 14px;flex-wrap:wrap">
+              <span class="card-kicker" style="font-size:10px">SYNCED</span>
+              <span style="font-size:13px"><strong style="font-family:var(--font-heading);font-size:16px">6,842</strong> steps</span>
+              <span style="font-size:13px"><strong style="font-family:var(--font-heading);font-size:16px">61</strong> resting HR</span>
+              <span style="font-size:13px"><strong style="font-family:var(--font-heading);font-size:16px">7 h 20 m</strong> sleep</span>
+              <span class="card-meta" style="margin-left:auto">{{ deviceCount }} device(s) · simulated</span>
+            </div>
+          </sc-if>
+          <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:stretch">
+            <div class="card blueprint" style="flex:1 1 260px;padding:14px;gap:8px">
+              <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+              <span class="card-kicker">DAILY CHECK-IN</span>
+              <sc-if value="{{ checkinOpen }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;flex-direction:column;gap:8px">
+                  <sc-for list="{{ checkRows }}" as="row" hint-placeholder-count="3">
+                    <div style="display:flex;align-items:center;gap:8px">
+                      <span style="font-size:12.5px;width:52px;flex:none" class="text-muted">{{ row.label }}</span>
+                      <div style="display:flex;gap:5px">
+                        <sc-for list="{{ row.opts }}" as="o" hint-placeholder-count="5">
+                          <button data-k="{{ row.id }}" data-v="{{ o.v }}" onClick="{{ setDraft }}" class="btn" style="width:30px;height:30px;padding:0;font-size:13px;background:{{ o.bg }};color:{{ o.fg }};border-color:{{ o.bc }}">{{ o.v }}</button>
+                        </sc-for>
+                      </div>
+                    </div>
+                  </sc-for>
+                  <button onClick="{{ saveCheckin }}" class="btn btn-primary" style="margin-top:2px">Log it — keeps the streak</button>
+                </div>
+              </sc-if>
+              <sc-if value="{{ checkinDone }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;flex-direction:column;gap:6px">
+                  <span class="card-title" style="font-size:16px">Done for today. {{ checkinSummary }}</span>
+                  <sc-if value="{{ haveTrend }}" hint-placeholder-val="{{ false }}">
+                    <svg viewBox="0 0 120 34" style="width:100%;max-width:220px"><polyline points="{{ energyPoints }}" fill="none" stroke="var(--color-accent)" stroke-width="1.5"></polyline></svg>
+                    <span class="card-meta">Energy — last 7 check-ins</span>
+                  </sc-if>
+                </div>
+              </sc-if>
+            </div>
+            <div class="card blueprint elev-sm" style="flex:2 1 320px;padding:0;gap:0;overflow:visible">
+              <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+              <sc-if value="{{ isTrainingDay }}" hint-placeholder-val="{{ true }}">
+                <div style="padding:14px 16px;display:flex;flex-direction:column;gap:6px;border-bottom:1px solid var(--color-divider)">
+                  <div style="display:flex;justify-content:space-between"><span class="card-kicker">TODAY {{ prefTimeLabel }} — SCHEDULED</span><span class="tag tag-accent">{{ lengthLabel }}</span></div>
+                  <span class="card-title" style="font-size:19px">{{ todayFocus }}</span>
+                  <div style="display:flex;gap:8px;margin-top:2px">
+                    <button onClick="{{ goWorkouts }}" class="btn btn-primary" style="flex:1">Start session</button>
+                    <button onClick="{{ openCamHome }}" class="btn btn-secondary"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"></path><circle cx="12" cy="13" r="3"></circle></svg> Live</button>
+                  </div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ isRestDay }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:14px 16px;display:flex;flex-direction:column;gap:6px;border-bottom:1px solid var(--color-divider)">
+                  <span class="card-kicker">TODAY — RECOVERY DAY (SCHEDULED)</span>
+                  <span class="card-title" style="font-size:19px">Recovery walk — 25 min brisk</span>
+                  <p class="card-body" style="margin:0">Rest is training too. Walk, breathe, stretch — no barbell heroics today.</p>
+                  <button onClick="{{ goRecovery }}" class="btn btn-secondary" style="margin-top:2px">Open recovery tools</button>
+                </div>
+              </sc-if>
+              <div style="padding:11px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--color-divider)">
+                <span style="font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Hydration · {{ hydroLabel }}</span>
+                <button onClick="{{ addWater }}" class="btn btn-ghost" style="font-size:12px;padding:2px 8px">+ 250 ml</button>
+              </div>
+              <button onClick="{{ goRecovery }}" style="all:unset;cursor:pointer;box-sizing:border-box;padding:11px 16px;display:flex;justify-content:space-between;width:100%;border-bottom:1px solid var(--color-divider);font-family:var(--font-body)">
+                <span style="font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">18:00 · Lymphatic drainage — 12 min</span><span class="tag tag-neutral">RECOVERY</span>
+              </button>
+              <button onClick="{{ goDiet }}" style="all:unset;cursor:pointer;box-sizing:border-box;padding:11px 16px;display:flex;justify-content:space-between;width:100%;font-family:var(--font-body)">
+                <span style="font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Dinner · {{ dinnerName }}</span><span class="tag tag-accent">{{ dinnerTag }}</span>
+              </button>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button onClick="{{ goRecovery }}" class="btn btn-secondary" style="flex:1 1 180px;flex-direction:column;gap:2px;padding:10px"><span style="font-size:14px">10-min desk reset</span><span style="font-family:var(--font-body);font-weight:400;font-size:11px;opacity:0.65">Busy-day stretch · no kit</span></button>
+            <button onClick="{{ goBreathe }}" class="btn btn-secondary" style="flex:1 1 180px;flex-direction:column;gap:2px;padding:10px"><span style="font-size:14px">Breathing timer</span><span style="font-family:var(--font-body);font-weight:400;font-size:11px;opacity:0.65">Box breathing · 5 min calm</span></button>
+            <button onClick="{{ goProgress }}" class="btn btn-secondary" style="flex:1 1 180px;flex-direction:column;gap:2px;padding:10px"><span style="font-size:14px">{{ weekDoneLabel }}</span><span style="font-family:var(--font-body);font-weight:400;font-size:11px;opacity:0.65">Open progress</span></button>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showWorkouts }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:16px;animation:fadeUp .3s both">
+          <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between">
+            <div style="display:flex;align-items:baseline;gap:10px"><h3 style="margin:0;text-transform:uppercase">{{ splitName }}</h3><span class="card-meta">{{ weekLabel }}</span></div>
+            <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center">
+              <span class="tag tag-accent">{{ goalLabel }}</span><span class="tag tag-neutral">{{ focusLabel }}</span><span class="tag tag-outline">{{ lengthLabel }}</span>
+              <sc-if value="{{ hasInjuries }}" hint-placeholder-val="{{ false }}"><span class="tag tag-neutral">WORKING AROUND: {{ injuryLabel }}</span></sc-if>
+              <button onClick="{{ openCamHome }}" class="btn btn-ghost" style="font-size:12px;padding:2px 8px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"></path><circle cx="12" cy="13" r="3"></circle></svg> Live</button>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:22px">
+            <sc-for list="{{ days }}" as="d" hint-placeholder-count="4">
+              <div class="card blueprint elev-sm" style="gap:10px;padding:16px;animation:fadeUp .4s {{ d.delay }} both">
+                <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                  <span class="card-kicker" style="font-size:11px">{{ d.label }}</span>
+                  <span class="tag tag-neutral">{{ d.focus }}</span>
+                </div>
+                <div class="card-meta" style="border-bottom:1px solid var(--color-divider);padding-bottom:7px">Joint-friendly warm-up — 5 min easy movement first</div>
+                <div style="display:flex;flex-direction:column">
+                  <sc-for list="{{ d.exercises }}" as="ex" hint-placeholder-count="4">
+                    <button data-ex="{{ ex.name }}" onClick="{{ openEx }}" style="all:unset;cursor:pointer;box-sizing:border-box;display:flex;justify-content:space-between;gap:8px;width:100%;padding:7px 2px;border-bottom:1px solid color-mix(in srgb, var(--color-text) 8%, transparent);font-family:var(--font-body);font-size:13.5px" style-hover="background:color-mix(in srgb, var(--color-accent) 8%, transparent)">
+                      <span style="color:var(--color-accent-700)">{{ ex.name }}</span>
+                      <span style="white-space:nowrap;opacity:0.7">{{ ex.scheme }} · rest {{ ex.rest }}</span>
+                    </button>
+                  </sc-for>
+                </div>
+                <sc-if value="{{ coachTips }}" hint-placeholder-val="{{ true }}"><p class="card-meta" style="margin:0">{{ d.tip }}</p></sc-if>
+                <button data-day="{{ d.label }}" onClick="{{ logSession }}" class="btn btn-secondary" style="font-size:12.5px;padding:5px 10px">Mark session done ✓</button>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showDetail }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:16px;max-width:760px;animation:fadeUp .3s both">
+          <button onClick="{{ closeEx }}" class="btn btn-ghost" style="align-self:flex-start;font-size:13px">← Back to plan</button>
+          <div>
+            <span class="card-kicker" style="font-size:11px">{{ exMuscle }} — {{ exScheme }}</span>
+            <h2 style="margin:4px 0 0;text-transform:uppercase">{{ exName }}</h2>
+          </div>
+          <div class="card blueprint elev-sm" style="padding:14px;gap:6px;align-items:center">
+            <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+            <span class="card-kicker" style="align-self:flex-start">FITNESS BUDDY — MOVEMENT DEMO</span>
+            <div style="height:240px;display:grid;place-items:center;perspective:600px;overflow:hidden">
+              <div style="position:relative;width:130px;height:212px;transform-style:preserve-3d;transform:rotateY(-14deg);animation:{{ buddyGroup }}">
+                <div style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:56px;height:56px;border-radius:50%;background:var(--color-neutral-300);box-shadow:inset -6px -4px 0 color-mix(in srgb, var(--color-neutral-500) 45%, transparent)">
+                  <div style="position:absolute;top:22px;left:14px;width:6px;height:6px;border-radius:50%;background:var(--color-neutral-900)"></div>
+                  <div style="position:absolute;top:22px;right:14px;width:6px;height:6px;border-radius:50%;background:var(--color-neutral-900)"></div>
+                  <div style="position:absolute;top:36px;left:50%;transform:translateX(-50%);width:16px;height:7px;border-bottom:2px solid var(--color-neutral-900);border-radius:0 0 10px 10px"></div>
+                </div>
+                <div style="position:absolute;top:52px;left:50%;transform:translateX(-50%);width:66px;height:74px;border-radius:24px;background:var(--color-accent);box-shadow:inset -8px -6px 0 color-mix(in srgb, var(--color-accent-800) 40%, transparent)"></div>
+                <div style="position:absolute;top:56px;left:12px;width:16px;height:60px;border-radius:9px;background:var(--color-accent-700);transform-origin:50% 9px;animation:{{ buddyArmL }}"></div>
+                <div style="position:absolute;top:56px;right:12px;width:16px;height:60px;border-radius:9px;background:var(--color-accent-700);transform-origin:50% 9px;animation:{{ buddyArmR }}"></div>
+                <div style="position:absolute;top:122px;left:36px;width:18px;height:70px;border-radius:9px;background:var(--color-neutral-800);transform-origin:50% 4px;animation:{{ buddyLegs }}"></div>
+                <div style="position:absolute;top:122px;right:36px;width:18px;height:70px;border-radius:9px;background:var(--color-neutral-800);transform-origin:50% 4px;animation:{{ buddyLegs }}"></div>
+                <div style="position:absolute;bottom:-8px;left:50%;transform:translateX(-50%) rotateX(70deg);width:110px;height:26px;border-radius:50%;background:color-mix(in srgb, var(--color-neutral-900) 14%, transparent)"></div>
+              </div>
+            </div>
+            <span class="card-meta">{{ buddyLabel }}</span>
+          </div>
+          <sc-if value="{{ exImgHas }}" hint-placeholder-val="{{ false }}">
+            <figure class="blueprint duotone" style="margin:0;background:var(--color-surface)">
+              <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+              {{ exImgEl }}
+              <figcaption style="padding:6px 10px">Demonstration image — wger.de open exercise database</figcaption>
+            </figure>
+          </sc-if>
+          <sc-if value="{{ exImgNone }}" hint-placeholder-val="{{ true }}">
+            <div class="blueprint" style="aspect-ratio:16/7;display:grid;place-items:center;background:var(--color-surface)">
+              <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+                <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><path d="m10 8 6 4-6 4z"></path></svg>
+                <span class="card-meta">{{ exImgMsg }}</span>
+              </div>
+            </div>
+          </sc-if>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px">
+            <div class="card blueprint" style="padding:14px;gap:6px">
+              <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+              <span class="card-kicker">FORM CUES</span>
+              <sc-for list="{{ exCues }}" as="c" hint-placeholder-count="3">
+                <div style="display:flex;gap:8px;font-size:13.5px"><span style="color:var(--color-accent);font-family:var(--font-heading)">{{ c.n }}</span><span>{{ c.t }}</span></div>
+              </sc-for>
+            </div>
+            <div class="card blueprint" style="padding:14px;gap:6px;border-left:2px solid var(--color-accent)">
+              <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+              <span class="card-kicker">JOINT-SAFE NOTE — 40+</span>
+              <p style="margin:0;font-size:13.5px">{{ exSafety }}</p>
+              <div style="display:flex;gap:14px;margin-top:4px;font-size:12.5px"><span><span class="text-muted">Easier:</span> {{ exEasier }}</span></div>
+              <div style="font-size:12.5px"><span class="text-muted">Harder:</span> {{ exHarder }}</div>
+            </div>
+          </div>
+          <div class="card blueprint elev-sm" style="padding:16px;gap:10px;flex-direction:row;align-items:center;flex-wrap:wrap">
+            <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+            <div style="display:flex;flex-direction:column;flex:1;min-width:130px">
+              <span class="card-kicker">SET TIMER</span>
+              <span style="font-family:var(--font-heading);font-weight:600;font-size:44px;line-height:1">{{ repClock }}</span>
+              <span class="card-meta">Target {{ exScheme }} · rest {{ exRest }}</span>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button onClick="{{ toggleRepTimer }}" class="btn btn-primary">{{ repBtnLabel }}</button>
+              <button onClick="{{ resetRepTimer }}" class="btn btn-secondary">Reset</button>
+              <button onClick="{{ openCamHome }}" class="btn btn-secondary"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"></path><circle cx="12" cy="13" r="3"></circle></svg> Do it live</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showCamera }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:14px;max-width:860px;animation:fadeUp .3s both">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div><span class="card-kicker" style="font-size:11px">LIVE WORKOUT — CAMERA</span><h3 style="margin:2px 0 0;text-transform:uppercase">Form check mode</h3></div>
+            <button onClick="{{ closeCam }}" class="btn btn-secondary">Close ✕</button>
+          </div>
+          <sc-if value="{{ camErr }}" hint-placeholder-val="{{ false }}">
+            <div class="card blueprint" style="padding:16px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><p style="margin:0">{{ camErrMsg }}</p></div>
+          </sc-if>
+          <div class="blueprint" style="position:relative;background:var(--color-neutral-900);aspect-ratio:16/9;overflow:visible">
+            <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+            <video ref="{{ vidRef }}" autoPlay="{{ true }}" muted="{{ true }}" playsInline="{{ true }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)"></video>
+            <sc-if value="{{ showGuide }}" hint-placeholder-val="{{ false }}">
+              <svg viewBox="0 0 100 100" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" preserveAspectRatio="xMidYMax meet">
+                <g fill="none" stroke="var(--color-accent-300)" stroke-width="0.8" stroke-dasharray="2 2" opacity="0.9">
+                  <circle cx="50" cy="22" r="7"></circle><line x1="50" y1="29" x2="50" y2="58"></line>
+                  <line x1="50" y1="36" x2="34" y2="50"></line><line x1="50" y1="36" x2="66" y2="50"></line>
+                  <line x1="50" y1="58" x2="40" y2="82"></line><line x1="50" y1="58" x2="60" y2="82"></line>
+                  <line x1="40" y1="82" x2="38" y2="96"></line><line x1="60" y1="82" x2="62" y2="96"></line>
+                </g>
+              </svg>
+            </sc-if>
+            <div style="position:absolute;top:12px;right:14px;text-align:right">
+              <div style="font-family:var(--font-heading);font-weight:600;font-size:52px;line-height:1;color:var(--color-bg);text-shadow:0 1px 4px rgba(0,0,0,.5)">{{ reps }}</div>
+              <div style="font-size:10px;letter-spacing:0.1em;color:var(--color-accent-300)">REPS (AUTO)</div>
+            </div>
+            <sc-if value="{{ showHr }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;bottom:12px;left:14px;color:var(--color-bg);text-shadow:0 1px 4px rgba(0,0,0,.5)">
+                <span style="font-family:var(--font-heading);font-weight:600;font-size:30px">{{ liveHr }}</span>
+                <span style="font-size:10px;letter-spacing:0.1em;color:var(--color-accent-300)"> BPM — WATCH</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ recOn }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;top:14px;left:14px;display:flex;align-items:center;gap:6px;color:#fff;font-size:11px;letter-spacing:0.1em"><span style="width:9px;height:9px;border-radius:50%;background:#c0392b"></span>REC</div>
+            </sc-if>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button onClick="{{ toggleSet }}" class="btn btn-primary" style="flex:1;min-width:140px">{{ setBtnLabel }}</button>
+            <button onClick="{{ toggleRec }}" class="btn btn-secondary">{{ recBtnLabel }}</button>
+            <button onClick="{{ toggleGuide }}" class="btn btn-secondary">{{ guideBtnLabel }}</button>
+            <button onClick="{{ logSession }}" class="btn btn-secondary">Log session ✓</button>
+          </div>
+          <sc-if value="{{ camTip }}" hint-placeholder-val="{{ false }}">
+            <div class="card blueprint" style="padding:14px;gap:4px;border-left:2px solid var(--color-accent)">
+              <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+              <span class="card-kicker">COACH FEEDBACK — AI (CLAUDE)</span>
+              <p style="margin:0;font-size:14px">{{ camTipText }}</p>
+            </div>
+          </sc-if>
+          <sc-if value="{{ hasClip }}" hint-placeholder-val="{{ false }}">
+            <div class="card blueprint" style="padding:14px;gap:8px">
+              <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+              <span class="card-kicker">REVIEW YOUR SET</span>
+              <video src="{{ clipUrl }}" controls="{{ true }}" style="width:100%;max-width:480px;background:#000"></video>
+            </div>
+          </sc-if>
+          <p class="card-meta" style="margin:0">Video stays on this device — nothing is uploaded. Coach feedback is real AI (Claude) based on your set stats; rep counting and heart rate are simulated until the phone link (Android Health Connect first) is built.</p>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showDiet }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:18px;animation:fadeUp .3s both">
+          <sc-if value="{{ hasDietary }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:8px;border:1px solid var(--color-accent);padding:9px 14px;flex-wrap:wrap">
+              <span class="card-kicker" style="font-size:10px">HEALTH REQUIREMENTS ACTIVE</span>
+              <span style="font-size:13px">{{ dietaryLabel }} — non-compliant meals are removed, not deprioritised. Always verify labels.</span>
+            </div>
+          </sc-if>
+          <div style="display:flex;flex-wrap:wrap;gap:14px">
+            <div class="card blueprint" style="flex:2 1 320px;padding:16px 20px">
+              <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+              <span class="card-kicker" style="font-size:11px">Daily targets — {{ goalLabel }}</span>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:14px;margin-top:6px">
+                <sc-for list="{{ targets }}" as="t" hint-placeholder-count="4">
+                  <div style="display:flex;flex-direction:column;border-left:2px solid var(--color-accent);padding-left:12px">
+                    <span style="font-family:var(--font-heading);font-weight:600;font-size:28px;line-height:1.05">{{ t.value }}</span>
+                    <span class="card-meta" style="text-transform:uppercase;letter-spacing:0.08em">{{ t.label }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <span class="card-meta" style="margin-top:6px">{{ targetsNote }}</span>
+            </div>
+            <div class="card blueprint" style="flex:1 1 220px;padding:16px;gap:6px">
+              <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+              <span class="card-kicker">HYDRATION</span>
+              <span style="font-family:var(--font-heading);font-weight:600;font-size:28px">{{ hydroLabel }}</span>
+              <div style="height:6px;border:1px solid var(--color-divider)"><div style="height:100%;background:var(--color-accent);width:{{ hydroPct }};transition:width .3s"></div></div>
+              <button onClick="{{ addWater }}" class="btn btn-secondary" style="margin-top:4px;font-size:12.5px;padding:4px 10px">+ 250 ml</button>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:22px">
+            <sc-for list="{{ meals }}" as="meal" hint-placeholder-count="4">
+              <div class="card blueprint elev-sm" style="gap:8px;padding:16px;animation:fadeUp .4s {{ meal.delay }} both">
+                <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                  <span class="card-kicker" style="font-size:11px">{{ meal.slot }}</span>
+                  <sc-if value="{{ meal.ai }}" hint-placeholder-val="{{ false }}"><span class="tag tag-accent">ANTI-INFLAM.</span></sc-if>
+                </div>
+                <span class="card-title">{{ meal.name }}</span>
+                <p class="card-body" style="flex:none">{{ meal.desc }}</p>
+                <div style="display:flex;gap:5px;flex-wrap:wrap">
+                  <sc-for list="{{ meal.reqTags }}" as="rt" hint-placeholder-count="2"><span class="tag tag-outline" style="font-size:10px">{{ rt.t }}</span></sc-for>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:3px;border-top:1px solid color-mix(in srgb, var(--color-text) 8%, transparent);padding-top:7px;flex:1">
+                  <sc-for list="{{ meal.prep }}" as="p" hint-placeholder-count="3">
+                    <span style="font-size:12px;opacity:0.75">{{ p.n }}. {{ p.t }}</span>
+                  </sc-for>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                  <sc-if value="{{ showMacros }}" hint-placeholder-val="{{ true }}">
+                    <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="tag tag-neutral">{{ meal.kcal }} kcal</span><span class="tag tag-neutral">{{ meal.protein }} g pro</span></div>
+                  </sc-if>
+                  <button data-slot="{{ meal.id }}" onClick="{{ swapMeal }}" class="btn btn-ghost" style="font-size:12px;padding:3px 8px">⟳ Swap</button>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <div class="card blueprint" style="padding:16px;gap:8px">
+            <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+            <span class="card-kicker">GROCERY LIST — TODAY'S FOUR MEALS</span>
+            <div style="columns:2;column-gap:28px;font-size:13.5px">
+              <sc-for list="{{ grocery }}" as="g" hint-placeholder-count="10">
+                <div style="padding:3px 0;border-bottom:1px solid color-mix(in srgb, var(--color-text) 7%, transparent);break-inside:avoid">▢ {{ g.item }}</div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showRecovery }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:18px;animation:fadeUp .3s both">
+          <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:stretch">
+            <div class="card blueprint elev-sm" style="flex:1 1 300px;padding:18px;gap:10px;align-items:center">
+              <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+              <span class="card-kicker" style="align-self:flex-start">BOX BREATHING — 4·4·4·4</span>
+              <div style="width:130px;height:130px;display:grid;place-items:center;margin:6px 0">
+                <div style="width:110px;height:110px;border-radius:50%;background:var(--color-accent-200);border:1px solid var(--color-accent);display:grid;place-items:center;animation:{{ breatheAnim }}">
+                  <span style="font-family:var(--font-heading);font-weight:600;font-size:15px;letter-spacing:0.08em;color:var(--color-accent-800)">{{ breathPhase }}</span>
+                </div>
+              </div>
+              <span class="card-meta">{{ breathClock }}</span>
+              <button onClick="{{ toggleBreath }}" class="btn btn-primary" style="width:100%">{{ breathBtnLabel }}</button>
+            </div>
+            <div class="card blueprint" style="flex:1 1 300px;padding:16px;gap:8px">
+              <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+              <span class="card-kicker">LYMPHATIC DRAINAGE — 12 MIN</span>
+              <sc-for list="{{ lymphSteps }}" as="st" hint-placeholder-count="5">
+                <div style="display:flex;gap:8px;font-size:13.5px;padding:3px 0;border-bottom:1px solid color-mix(in srgb, var(--color-text) 7%, transparent)"><span style="color:var(--color-accent);font-family:var(--font-heading);flex:none">{{ st.n }}</span><span>{{ st.t }}</span></div>
+              </sc-for>
+              <p class="card-meta" style="margin:4px 0 0">Light pressure only — lymph sits just under the skin. Stop anything that hurts.</p>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:18px">
+            <sc-for list="{{ stretches }}" as="r" hint-placeholder-count="3">
+              <div class="card blueprint" style="padding:16px;gap:8px">
+                <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                <div style="display:flex;justify-content:space-between;align-items:center"><span class="card-kicker">STRETCH ROUTINE</span><span class="tag tag-neutral">{{ r.min }} MIN</span></div>
+                <span class="card-title" style="font-size:17px">{{ r.n }}</span>
+                <div style="display:flex;flex-direction:column;gap:3px">
+                  <sc-for list="{{ r.steps }}" as="st" hint-placeholder-count="4">
+                    <span style="font-size:12.5px;opacity:0.8">— {{ st.t }}</span>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+            <div class="card blueprint" style="padding:16px;gap:8px">
+              <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+              <div style="display:flex;justify-content:space-between;align-items:center"><span class="card-kicker">REST-DAY WALK</span><span class="tag tag-neutral">25 MIN</span></div>
+              <span class="card-title" style="font-size:17px">Brisk pace, head up</span>
+              <p class="card-body" style="flex:none">Aim for a pace where talking is possible but singing isn't. Swing the arms — it doubles as lymph work.</p>
+              <button onClick="{{ logSession }}" class="btn btn-secondary" style="font-size:12.5px;padding:5px 10px">Count today's walk ✓</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showProgress }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:18px;animation:fadeUp .3s both">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px">
+            <div class="card blueprint" style="padding:14px;gap:2px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+              <span style="font-family:var(--font-heading);font-weight:600;font-size:36px;line-height:1">{{ streak }}</span><span class="card-meta" style="text-transform:uppercase;letter-spacing:0.08em">Day streak</span></div>
+            <div class="card blueprint" style="padding:14px;gap:2px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+              <span style="font-family:var(--font-heading);font-weight:600;font-size:36px;line-height:1">{{ sessionsTotal }}</span><span class="card-meta" style="text-transform:uppercase;letter-spacing:0.08em">Sessions logged</span></div>
+            <div class="card blueprint" style="padding:14px;gap:2px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+              <span style="font-family:var(--font-heading);font-weight:600;font-size:36px;line-height:1">{{ weekDone }}</span><span class="card-meta" style="text-transform:uppercase;letter-spacing:0.08em">This week / {{ weekTarget }}</span></div>
+            <div class="card blueprint" style="padding:14px;gap:2px"><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+              <span style="font-family:var(--font-heading);font-weight:600;font-size:36px;line-height:1">{{ checkinCount }}</span><span class="card-meta" style="text-transform:uppercase;letter-spacing:0.08em">Check-ins</span></div>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:stretch">
+            <div class="card blueprint" style="flex:1 1 300px;padding:16px;gap:8px">
+              <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+              <div style="display:flex;justify-content:space-between;align-items:center"><span class="card-kicker">BODY WEIGHT — KG</span>
+                <sc-if value="{{ scaleConnected }}" hint-placeholder-val="{{ false }}"><span class="tag tag-accent">SMART SCALE SYNC</span></sc-if></div>
+              <sc-if value="{{ haveWeights }}" hint-placeholder-val="{{ false }}">
+                <svg viewBox="0 0 240 60" style="width:100%"><polyline points="{{ weightPoints }}" fill="none" stroke="var(--color-accent)" stroke-width="1.5"></polyline></svg>
+                <span class="card-meta">{{ weightSummary }}</span>
+              </sc-if>
+              <sc-if value="{{ noWeights }}" hint-placeholder-val="{{ true }}"><p class="card-meta" style="margin:0">No entries yet — log your first weigh-in below.</p></sc-if>
+              <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap;align-items:center">
+                <input class="input" type="number" placeholder="e.g. 82.4" value="{{ wInput }}" onChange="{{ setWInput }}" style="max-width:130px">
+                <button onClick="{{ addWeight }}" class="btn btn-primary">Log kg</button>
+                <input class="input" type="number" placeholder="Height cm" value="{{ heightVal }}" onChange="{{ setHeight }}" style="max-width:110px">
+                <input class="input" type="number" placeholder="Age" value="{{ ageVal }}" onChange="{{ setAge }}" style="max-width:80px">
+                <div class="seg"><sc-for list="{{ sexOpts }}" as="o" hint-placeholder-count="2"><label class="seg-opt"><input type="radio" name="sex" value="{{ o.id }}" checked="{{ o.active }}" onChange="{{ setSex }}">{{ o.label }}</label></sc-for></div>
+              </div>
+              <div style="border-top:1px solid var(--color-divider);padding-top:8px;margin-top:6px;display:flex;flex-direction:column;gap:3px">
+                <sc-if value="{{ hasBmi }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px">{{ bmiLine }}</span></sc-if>
+                <span class="card-meta">{{ rangeLine }}</span>
+              </div>
+            </div>
+            <div class="card blueprint" style="flex:1 1 300px;padding:16px;gap:8px">
+              <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+              <span class="card-kicker">SLEEP · STRESS · ENERGY (1–5)</span>
+              <sc-if value="{{ haveTrend }}" hint-placeholder-val="{{ false }}">
+                <svg viewBox="0 0 240 60" style="width:100%">
+                  <polyline points="{{ energyPointsBig }}" fill="none" stroke="var(--color-accent)" stroke-width="1.5"></polyline>
+                  <polyline points="{{ stressPointsBig }}" fill="none" stroke="var(--color-neutral-500)" stroke-width="1.5" stroke-dasharray="3 3"></polyline>
+                </svg>
+                <div style="display:flex;gap:14px" class="card-meta"><span style="color:var(--color-accent-700)">— Energy</span><span>--- Stress</span></div>
+              </sc-if>
+              <sc-if value="{{ noTrend }}" hint-placeholder-val="{{ true }}"><p class="card-meta" style="margin:0">Check in daily on Home to build this chart.</p></sc-if>
+            </div>
+          </div>
+          <div class="card blueprint" style="padding:16px;gap:8px">
+            <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+            <span class="card-kicker">MOBILITY MILESTONES</span>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px">
+              <sc-for list="{{ milestones }}" as="m" hint-placeholder-count="5">
+                <button data-i="{{ m.i }}" onClick="{{ toggleMilestone }}" class="btn" style="justify-content:flex-start;gap:8px;font-family:var(--font-body);font-weight:400;font-size:13px;background:{{ m.bg }};color:{{ m.fg }};border-color:{{ m.bc }};text-align:left">{{ m.mark }} {{ m.t }}</button>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showSocial }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:18px;animation:fadeUp .3s both">
+          <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:stretch">
+            <div class="card blueprint elev-sm" style="flex:2 1 320px;padding:16px;gap:10px">
+              <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+              <div style="display:flex;justify-content:space-between;align-items:center"><span class="card-kicker">WEEKLY CHALLENGE</span><span class="tag tag-accent">{{ challengeDaysLeft }}</span></div>
+              <span class="card-title" style="font-size:22px">150 active minutes this week</span>
+              <p class="card-body" style="flex:none;margin:0">Workouts, walks, rides and sports all count. Resets Sunday.</p>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="flex:1;height:8px;border:1px solid var(--color-divider)"><div style="height:100%;background:var(--color-accent);width:{{ challengePct }};transition:width .3s"></div></div>
+                <span style="font-family:var(--font-heading);font-weight:600;font-size:20px;white-space:nowrap">{{ activeMin }} / 150</span>
+              </div>
+              <sc-if value="{{ challengeDone }}" hint-placeholder-val="{{ false }}"><span class="tag tag-accent" style="align-self:flex-start">CHALLENGE COMPLETE ✓</span></sc-if>
+            </div>
+            <div class="card blueprint" style="flex:1 1 240px;padding:16px;gap:8px">
+              <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+              <span class="card-kicker">LOG AN ACTIVITY</span>
+              <select class="input" value="{{ evType }}" onChange="{{ setEvType }}">
+                <option value="Walk">Walk</option><option value="Ride">Ride</option><option value="Run">Run</option><option value="Swim">Swim</option><option value="Squash">Squash</option><option value="Tennis">Tennis</option><option value="Other sport">Other sport</option>
+              </select>
+              <div style="display:flex;gap:8px">
+                <input class="input" type="number" placeholder="Minutes" value="{{ evMin }}" onChange="{{ setEvMin }}">
+                <input class="input" type="number" placeholder="Avg HR" value="{{ evHr }}" onChange="{{ setEvHr }}">
+              </div>
+              <input class="input" type="number" placeholder="Distance km (optional)" value="{{ evDist }}" onChange="{{ setEvDist }}">
+              <button onClick="{{ addEvent }}" class="btn btn-primary">Log activity ✓</button>
+              <span class="card-meta">Counts toward the challenge and your streak. Auto-import arrives with the phone link.</span>
+            </div>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start">
+            <div class="card blueprint" style="flex:1 1 300px;padding:16px;gap:8px">
+              <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+              <span class="card-kicker">LEADERBOARD — ACTIVE MINUTES</span>
+              <div style="display:flex;flex-direction:column">
+                <sc-for list="{{ leaderboard }}" as="u" hint-placeholder-count="4">
+                  <div style="display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid color-mix(in srgb, var(--color-text) 8%, transparent);background:{{ u.bg }}">
+                    <span style="font-family:var(--font-heading);font-weight:600;width:22px;color:var(--color-accent)">{{ u.rank }}</span>
+                    <span style="width:30px;height:30px;flex:none;display:grid;place-items:center;border:1px solid var(--color-divider);font-family:var(--font-heading);font-weight:600;font-size:12px">{{ u.init }}</span>
+                    <span style="flex:1;font-size:13.5px">{{ u.name }}</span>
+                    <span style="font-family:var(--font-heading);font-weight:600">{{ u.min }} min</span>
+                  </div>
+                </sc-for>
+              </div>
+              <sc-if value="{{ noFriends }}" hint-placeholder-val="{{ false }}"><span class="card-meta">Add training partners to build the board.</span></sc-if>
+            </div>
+            <div class="card blueprint" style="flex:1 1 300px;padding:16px;gap:8px">
+              <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+              <span class="card-kicker">FIND TRAINING PARTNERS</span>
+              <input class="input" placeholder="Search by name or handle…" value="{{ searchQ }}" onChange="{{ setSearchQ }}">
+              <div style="display:flex;flex-direction:column">
+                <sc-for list="{{ userResults }}" as="u" hint-placeholder-count="4">
+                  <div style="display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid color-mix(in srgb, var(--color-text) 8%, transparent)">
+                    <span style="width:30px;height:30px;flex:none;display:grid;place-items:center;border:1px solid var(--color-divider);font-family:var(--font-heading);font-weight:600;font-size:12px">{{ u.init }}</span>
+                    <div style="flex:1;min-width:0"><div style="font-size:13.5px">{{ u.name }}</div><div class="card-meta">{{ u.handle }} · {{ u.tagline }}</div></div>
+                    <button data-id="{{ u.id }}" onClick="{{ toggleFriend }}" class="btn" style="font-size:12px;padding:3px 10px;background:{{ u.bg }};color:{{ u.fg }};border-color:{{ u.bc }}">{{ u.btn }}</button>
+                  </div>
+                </sc-for>
+              </div>
+              <span class="card-meta">Community, partners and leaderboards are simulated — a real release needs user accounts and a synced backend.</span>
+            </div>
+          </div>
+          <sc-if value="{{ hasEvents }}" hint-placeholder-val="{{ false }}">
+            <div class="card blueprint" style="padding:16px;gap:8px">
+              <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+              <span class="card-kicker">RECENT ACTIVITIES</span>
+              <div style="display:flex;flex-direction:column">
+                <sc-for list="{{ eventRows }}" as="ev" hint-placeholder-count="5">
+                  <div style="display:flex;align-items:center;gap:12px;padding:8px 2px;border-bottom:1px solid color-mix(in srgb, var(--color-text) 8%, transparent);flex-wrap:wrap">
+                    <span class="tag tag-neutral" style="width:74px;justify-content:center">{{ ev.type }}</span>
+                    <span style="font-size:13px" class="text-muted">{{ ev.date }}</span>
+                    <span style="flex:1"></span>
+                    <span style="font-size:13.5px;font-family:var(--font-heading);font-weight:600">{{ ev.detail }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showSettings }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:18px;max-width:760px;animation:fadeUp .3s both">
+          <p class="text-muted" style="margin:0">Your picks drive everything — plan, meals and schedule redraw instantly.</p>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <h6 style="margin:0 0 2px">Fitness goal</h6>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px">
+              <sc-for list="{{ goalOpts }}" as="g" hint-placeholder-count="5">
+                <button data-id="{{ g.id }}" onClick="{{ setGoal }}" class="btn" style="flex-direction:column;align-items:flex-start;gap:1px;padding:9px 12px;background:{{ g.bg }};color:{{ g.fg }};border-color:{{ g.bc }};transition:background .15s,color .15s,border-color .15s">
+                  <span style="font-size:15px;letter-spacing:0.02em">{{ g.label }}</span>
+                  <span style="font-family:var(--font-body);font-weight:400;font-size:11.5px;opacity:0.72;text-align:left">{{ g.desc }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <h6 style="margin:0 0 2px">Training days <span class="text-muted" style="font-weight:400;text-transform:none;letter-spacing:0">— pick the days you can realistically train</span></h6>
+            <div style="display:flex;flex-wrap:wrap;gap:7px">
+              <sc-for list="{{ availOpts }}" as="d" hint-placeholder-count="7">
+                <button data-d="{{ d.i }}" onClick="{{ toggleAvail }}" class="btn" style="width:56px;padding:6px 0;font-size:12.5px;background:{{ d.bg }};color:{{ d.fg }};border-color:{{ d.bc }}">{{ d.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <h6 style="margin:0 0 2px">Muscle focus <span class="text-muted" style="font-weight:400;text-transform:none;letter-spacing:0">— none selected = full body</span></h6>
+            <div style="display:flex;flex-wrap:wrap;gap:7px">
+              <sc-for list="{{ muscleOpts }}" as="m" hint-placeholder-count="7">
+                <button data-id="{{ m.id }}" onClick="{{ toggleMuscle }}" class="btn" style="padding:4px 11px;font-size:12.5px;background:{{ m.bg }};color:{{ m.fg }};border-color:{{ m.bc }}">{{ m.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <h6 style="margin:0 0 2px">Injuries / sensitive areas <span class="text-muted" style="font-weight:400;text-transform:none;letter-spacing:0">— exercises that load these are removed</span></h6>
+            <div style="display:flex;flex-wrap:wrap;gap:7px">
+              <sc-for list="{{ injuryOpts }}" as="m" hint-placeholder-count="4">
+                <button data-id="{{ m.id }}" onClick="{{ toggleInjury }}" class="btn" style="padding:4px 11px;font-size:12.5px;background:{{ m.bg }};color:{{ m.fg }};border-color:{{ m.bc }}">{{ m.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <h6 style="margin:0 0 2px">Dietary health requirements <span class="text-muted" style="font-weight:400;text-transform:none;letter-spacing:0">— hard filters, not preferences</span></h6>
+            <div style="display:flex;flex-wrap:wrap;gap:7px">
+              <sc-for list="{{ dietaryOpts }}" as="m" hint-placeholder-count="4">
+                <button data-id="{{ m.id }}" onClick="{{ toggleDietary }}" class="btn" style="padding:4px 11px;font-size:12.5px;background:{{ m.bg }};color:{{ m.fg }};border-color:{{ m.bc }}">{{ m.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:16px">
+            <div style="display:flex;flex-direction:column;gap:6px"><h6 style="margin:0">Level</h6>
+              <div class="seg"><sc-for list="{{ levelOpts }}" as="o" hint-placeholder-count="3"><label class="seg-opt"><input type="radio" name="level" value="{{ o.id }}" checked="{{ o.active }}" onChange="{{ setLevel }}">{{ o.label }}</label></sc-for></div></div>
+            <div style="display:flex;flex-direction:column;gap:6px"><h6 style="margin:0">Equipment</h6>
+              <div class="seg"><sc-for list="{{ kitOpts }}" as="o" hint-placeholder-count="2"><label class="seg-opt"><input type="radio" name="kit" value="{{ o.id }}" checked="{{ o.active }}" onChange="{{ setKit }}">{{ o.label }}</label></sc-for></div></div>
+            <div style="display:flex;flex-direction:column;gap:6px"><h6 style="margin:0">Session length</h6>
+              <div class="seg"><sc-for list="{{ lenOpts }}" as="o" hint-placeholder-count="5"><label class="seg-opt"><input type="radio" name="len" value="{{ o.id }}" checked="{{ o.active }}" onChange="{{ setLen }}">{{ o.label }}</label></sc-for></div></div>
+            <div style="display:flex;flex-direction:column;gap:6px"><h6 style="margin:0">Preferred time</h6>
+              <div class="seg"><sc-for list="{{ timeOpts }}" as="o" hint-placeholder-count="3"><label class="seg-opt"><input type="radio" name="ptime" value="{{ o.id }}" checked="{{ o.active }}" onChange="{{ setPrefTime }}">{{ o.label }}</label></sc-for></div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <h6 style="margin:0 0 2px">Connected devices</h6>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <sc-for list="{{ deviceRows }}" as="dev" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;gap:10px;border:1px solid var(--color-divider);padding:10px 12px">
+                  <div style="flex:1;min-width:0"><div style="font-family:var(--font-heading);font-weight:600;font-size:15px">{{ dev.n }}</div><div class="card-meta">{{ dev.d }}</div></div>
+                  <span class="tag {{ dev.tagClass }}">{{ dev.status }}</span>
+                  <button data-id="{{ dev.id }}" onClick="{{ connectDevice }}" class="btn btn-secondary" style="font-size:12.5px;padding:4px 10px">{{ dev.btn }}</button>
+                </div>
+              </sc-for>
+            </div>
+            <span class="card-meta">Device pairing and readings are simulated in this prototype.</span>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button onClick="{{ redoWizard }}" class="btn btn-secondary">Redo the intake questionnaire</button>
+            <button onClick="{{ reopenDisc }}" class="btn btn-ghost">Re-read the disclaimer</button>
+          </div>
+          <p class="card-meta" style="margin:0">Data lives in this browser only. Gym App is not medical advice — you use it at your own risk and accept all responsibility, as per the disclaimer you accepted.</p>
+        </div>
+      </sc-if>
+
+    </div>
+    <div class="gym-tabs" style="display:flex;border-top:1px solid var(--color-divider);background:var(--color-surface);position:sticky;bottom:0">
+      <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="6">
+        <button data-id="{{ n.id }}" onClick="{{ setNav }}" style="all:unset;cursor:pointer;box-sizing:border-box;flex:1;text-align:center;padding:11px 0;font-family:var(--font-heading);font-weight:600;font-size:11.5px;letter-spacing:0.06em;color:{{ n.tc }};border-top:2px solid {{ n.tb }}">{{ n.short }}</button>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;coachTips&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Content&quot;}, &quot;showMacros&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Content&quot;}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem('gymapp_v2') || '{}'); } catch (e) {}
+    this.state = {
+      accepted: false, onboardDone: false, obStep: 0, discChecked: false,
+      nav: 'home', detailEx: null, camScreen: false,
+      settings: { goal: 'general', muscles: [], level: 'intermediate', kit: 'dbbw', len: 30, availDays: [1, 3, 5], prefTime: 'morning', dietary: [], injuries: [] },
+      devices: { watch: false, phone: false, scale: false, hrm: false }, pairing: null,
+      checkins: [], hydro: { date: '', ml: 0 }, weights: [], height: '', mobility: [false, false, false, false, false],
+      activity: [], sessions: 0, mealIdx: { breakfast: 0, lunch: 0, dinner: 0, snack: 0 },
+      events: [], friends: [], searchQ: '', evType: 'Walk', evMin: '', evHr: '', evDist: '',
+      draft: { sleep: 0, stress: 0, energy: 0 }, wInput: '',
+      repRun: false, repSec: 0, breathRun: false, breathSec: 0,
+      camOn: false, camErr: false, reps: 0, setOn: false, camTip: null, recOn: false, clipUrl: null,
+      ...saved
+    };
+    this.state.settings = { goal: 'general', muscles: [], level: 'intermediate', kit: 'dbbw', len: 30, availDays: [1, 3, 5], prefTime: 'morning', dietary: [], injuries: [], ...(saved.settings || {}) };
+    this.vidRef = React.createRef();
+  }
+  persist() {
+    const s = this.state;
+    try { localStorage.setItem('gymapp_v2', JSON.stringify({ accepted: s.accepted, onboardDone: s.onboardDone, settings: s.settings, devices: s.devices, checkins: s.checkins, hydro: s.hydro, weights: s.weights, height: s.height, profileAge: s.profileAge, profileSex: s.profileSex, mobility: s.mobility, activity: s.activity, sessions: s.sessions, mealIdx: s.mealIdx, events: s.events, friends: s.friends })); } catch (e) {}
+  }
+  setP(updater) { this.setState(updater, () => this.persist()); }
+  componentWillUnmount() { this.stopAll(); }
+  stopAll() { clearInterval(this.repIv); clearInterval(this.brIv); clearInterval(this.setIv); clearTimeout(this.pairTo); if (this.stream) { this.stream.getTracks().forEach((t) => t.stop()); this.stream = null; } if (this.rec && this.rec.state === 'recording') this.rec.stop(); }
+  today() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  logActivity() { const t = this.today(); this.setP((s) => ({ activity: s.activity.includes(t) ? s.activity : [...s.activity, t] })); }
+  DB = {
+    chest: { label: 'Chest', ex: [
+      { n: 'Dumbbell floor press', k: 'db', av: [], c: ['Elbows at 45°, not flared wide', 'Light touch at the floor, then drive', 'Exhale on the press'], s: 'The floor limits shoulder depth — kinder to over-40 shoulders than a deep bench press.', e: 'Incline push-up on a counter', h: 'Slow 3-second lowering' },
+      { n: 'Push-up', k: 'bw', av: ['wrist'], c: ['One straight line, head to heels', 'Hands under shoulders', 'Squeeze glutes throughout'], s: 'Wrists cranky? Do them on dumbbells to keep wrists neutral.', e: 'Hands on a bench or counter', h: 'Feet elevated' },
+      { n: 'Incline push-up', k: 'bw', av: ['wrist'], c: ['Hands on a sturdy surface', 'Chest to the edge, not chin', 'Slow down, brisk up'], s: 'The higher the hands, the easier — pick a height where 12 clean reps is possible.', e: 'Wall push-up', h: 'Lower surface' },
+      { n: 'Dumbbell squeeze press', k: 'db', av: [], c: ['Press dumbbells together hard', 'Keep them touching the whole rep', 'Slow and controlled'], s: 'The squeeze keeps shoulders packed — a joint-friendly chest builder.', e: 'Lighter pair, floor press', h: 'Pause 2 s at the bottom' } ] },
+    back: { label: 'Back', ex: [
+      { n: 'One-arm dumbbell row', k: 'db', av: [], c: ['Flat back, hand braced on a bench', 'Pull elbow to hip, not to armpit', 'No torso twist'], s: 'The brace protects the lower back — never row bent over unsupported with heavy load.', e: 'Both hands braced, lighter bell', h: 'Pause 1 s at the top' },
+      { n: 'Bent-over dumbbell row', k: 'db', av: ['back'], c: ['Hinge, don\u2019t bow — hips back', 'Chest proud, neck neutral', 'Pull both elbows past the ribs'], s: 'Keep the hinge shallow (30–45°) to spare the lumbar spine.', e: 'Chest-supported on an incline', h: 'Slow 3-second lowering' },
+      { n: 'Superman hold', k: 'bw', av: ['back'], c: ['Lift chest and thighs a few cm', 'Reach long, don\u2019t crane the neck', 'Breathe — no breath holding'], s: 'Lift low and long; height is not the goal. Skip if it pinches the low back.', e: 'Arms by your sides', h: 'Hold 20–30 s' },
+      { n: 'Prone Y-raise', k: 'bw', av: [], c: ['Thumbs up to the ceiling', 'Lift from the shoulder blades', 'Small, honest range'], s: 'Excellent for posture and shoulder health — the range is small on purpose.', e: 'Standing, hinged at 45°', h: 'Add tiny dumbbells (1–2 kg)' } ] },
+    legs: { label: 'Legs', ex: [
+      { n: 'Goblet squat', k: 'db', av: ['knee'], c: ['Bell tight to the chest', 'Sit between the heels', 'Knees track over the toes'], s: 'The front load keeps the torso upright — the safest squat for most over-40 knees and backs.', e: 'Squat to a box or chair', h: 'Pause 2 s at the bottom' },
+      { n: 'Dumbbell Romanian deadlift', k: 'db', av: ['back'], c: ['Hips back, soft knees', 'Bells slide down the thighs', 'Stop where the hamstrings load'], s: 'Range ends where your hamstrings say so — never chase the floor with a rounding back.', e: 'Shorter range, lighter bells', h: 'Single-leg version, supported' },
+      { n: 'Split squat', k: 'bw', av: ['knee'], c: ['Long stance, torso tall', 'Back knee drops straight down', 'Front heel stays planted'], s: 'Hold a wall or chair for balance — balance is trainable, falling is not.', e: 'Hold support, shorter drop', h: 'Add dumbbells at the sides' },
+      { n: 'Glute bridge', k: 'bw', av: [], c: ['Heels close to the hips', 'Squeeze glutes at the top', 'Ribs down — no back arch'], s: 'Wakes up glutes that sitting puts to sleep; zero joint load.', e: 'Smaller range', h: 'Single-leg, 3 s hold' } ] },
+    shoulders: { label: 'Shoulders', ex: [
+      { n: 'Seated dumbbell press', k: 'db', av: ['shoulder'], c: ['Forearms vertical the whole rep', 'Press up and slightly in', 'Ribs down, no back arch'], s: 'Seated with back support spares the lower back; stop the range where the shoulder stays happy.', e: 'Alternate arms', h: 'Standing, braced core' },
+      { n: 'Lateral raise', k: 'db', av: ['shoulder'], c: ['Lead with the elbows', 'Stop at shoulder height', 'Pour-the-jug wrist at the top'], s: 'Light weight, high control — heavy lateral raises are how shoulders get angry.', e: 'Partial range, lighter', h: 'Slow 3-second lowering' },
+      { n: 'Pike push-up', k: 'bw', av: ['shoulder', 'wrist'], c: ['Hips high, make an A-shape', 'Head travels toward the floor', 'Elbows at 45°'], s: 'A shoulder press with body weight — bend more at the hips to make it easier.', e: 'Hands elevated on a step', h: 'Feet elevated' },
+      { n: 'Dumbbell front raise', k: 'db', av: ['shoulder'], c: ['One arm at a time', 'Stop at eye height', 'No swing — strict'], s: 'Keep it light; momentum here transfers straight into the shoulder joint.', e: 'Both hands, one bell', h: 'Pause 1 s at the top' } ] },
+    arms: { label: 'Arms', ex: [
+      { n: 'Dumbbell curl', k: 'db', av: [], c: ['Elbows pinned to the ribs', 'Full lowering every rep', 'No hip swing'], s: 'Full range with control beats heavy and half — elbows like it that way.', e: 'Alternate arms, lighter', h: 'Slow 3-second lowering' },
+      { n: 'Overhead triceps extension', k: 'db', av: ['shoulder'], c: ['Both hands on one bell', 'Elbows point forward, stay narrow', 'Stretch at the bottom, squeeze up'], s: 'Skip the deep stretch if the elbow complains; shorten the range instead.', e: 'Seated with back support', h: 'Single-arm version' },
+      { n: 'Chair dip', k: 'bw', av: ['shoulder', 'wrist'], c: ['Shoulders down, away from ears', 'Elbows point straight back', 'Shallow beats sore'], s: 'Keep the dip shallow — deep dips are a common over-40 shoulder complaint.', e: 'Feet closer, less depth', h: 'Feet elevated on a second chair' },
+      { n: 'Hammer curl', k: 'db', av: [], c: ['Thumbs up the whole rep', 'Squeeze at the top', 'Control the way down'], s: 'The neutral grip is the most forearm- and elbow-friendly curl.', e: 'Alternate arms', h: 'Pause 1 s at the top' } ] },
+    core: { label: 'Core', ex: [
+      { n: 'Dead bug', k: 'bw', av: [], c: ['Low back gently pressed down', 'Opposite arm and leg reach', 'Slow — 3 s per rep'], s: 'The gold-standard safe core drill: all the work, none of the spine flexion.', e: 'Legs only', h: 'Hold a light bell overhead' },
+      { n: 'Side plank', k: 'bw', av: ['shoulder'], c: ['One straight line, hips high', 'Elbow under the shoulder', 'Breathe normally'], s: 'From the knees is the right starting point — progress the lever, not the pain.', e: 'From the knees', h: 'Top leg raised' },
+      { n: 'Bird dog', k: 'bw', av: ['wrist'], c: ['Flat back — balance a cup on it', 'Reach long, not high', 'Pause 2 s per rep'], s: 'Builds the rotational stiffness that protects the back in daily life.', e: 'Arm only, then leg only', h: 'Elbow-to-knee touch between reps' },
+      { n: 'Suitcase carry', k: 'db', av: [], c: ['One heavy bell, one side', 'Walk tall — no lean', 'Shoulders level'], s: 'Carries train the core the way life loads it. Swap sides halfway.', e: 'Lighter bell, shorter walk', h: 'Heavier bell, 40 m' } ] },
+    full: { label: 'Full body', ex: [
+      { n: 'Dumbbell thruster', k: 'db', av: ['shoulder', 'knee'], c: ['Squat, then drive into the press', 'One fluid motion', 'Exhale at the top'], s: 'Light bells, smooth rhythm — this is a conditioning move, not a max lift.', e: 'Squat + press as two moves', h: 'Heavier, slower squat phase' },
+      { n: 'Reverse lunge + curl', k: 'db', av: ['knee'], c: ['Step back, not forward', 'Curl during the stand-up', 'Tall torso'], s: 'Reverse lunges load the knee far less than forward lunges.', e: 'Bodyweight lunge only', h: 'Add a press at the top' },
+      { n: 'Step-up', k: 'bw', av: ['knee'], c: ['Whole foot on the step', 'Drive through the heel', 'Control the way down'], s: 'Start with a low step; the way DOWN is where knees complain.', e: 'Lower step, hold support', h: 'Add dumbbells' },
+      { n: 'Inchworm walk-out', k: 'bw', av: ['wrist'], c: ['Walk hands out to a plank', 'Soft knees on the fold', 'Add a push-up if fresh'], s: 'A warm-up and a core drill in one — keep the walk slow.', e: 'Walk to half plank', h: 'Push-up at the bottom' } ] }
+  };
+  GOALS = {
+    muscle: { label: 'Build muscle', desc: 'Moderate reps, controlled tempo', sets: 3, reps: '8–10', rest: '90 s', restSec: 90, split: 'Hypertrophy split', kcal: 2600, protein: 150, carbs: 290, fat: 80, tips: ['Leave 1–2 reps in the tank — every set.', 'Add a rep or a little load each week.', 'Own the lowering phase: 2–3 s down.', 'Two easy warm-up rounds first. Always.'] },
+    fat: { label: 'Lose fat', desc: 'Higher reps, short rests, finishers', sets: 3, reps: '12–15', rest: '45 s', restSec: 45, finisher: true, split: 'Circuit split', kcal: 1900, protein: 150, carbs: 170, fat: 60, tips: ['Keep rests honest — use a timer.', 'Walk 8–10k steps on top of sessions.', 'Protein at every meal keeps you full.', 'Push the last set close to failure.'] },
+    strength: { label: 'Strength', desc: 'Heavier work, low reps, long rests', sets: 4, reps: '6', rest: '120 s', restSec: 120, split: 'Strength split', kcal: 2700, protein: 155, carbs: 300, fat: 85, tips: ['Brace before every rep — like a light cough.', 'Stop a set when the speed grinds.', 'Log the top set. Progress is the plan.', 'Technique first, load second.'] },
+    endurance: { label: 'Endurance', desc: 'High reps, minimal rest', sets: 3, reps: '15–20', rest: '30 s', restSec: 30, finisher: true, split: 'Endurance split', kcal: 2400, protein: 125, carbs: 310, fat: 70, tips: ['Move continuously — rest is a slow walk.', 'Keep loads light and form crisp.', 'Hydrate before, during, after.', 'Finish with 5 min easy cooldown.'] },
+    general: { label: 'General fitness', desc: 'Balanced strength + conditioning', sets: 3, reps: '10–12', rest: '60 s', restSec: 60, split: 'Balanced split', kcal: 2300, protein: 130, carbs: 250, fat: 75, tips: ['Consistency beats intensity. Show up.', 'Leave feeling better, not broken.', 'Stretch what you trained — 5 min.', 'Sleep is your best recovery tool.'] }
+  };
+  FINISHERS = ['March-in-place intervals — 4 × 1 min brisk / 30 s easy', 'Dumbbell swings — 3 × 15, light bell', 'Step-up ladder — 3 min steady', 'Shadow-box — 3 × 1 min', 'Farmer\u2019s carry — 4 × 30 m'];
+  MEALS = {
+    breakfast: [
+      { name: 'Protein oats', desc: 'GF-certified oats, whey, banana, walnuts.', kcal: 550, protein: 38, veg: true, lf: false, gf: true, nf: false, ai: true, ing: ['GF rolled oats', 'Whey protein', 'Bananas', 'Walnuts'], prep: ['Simmer oats in milk 4 min', 'Stir in whey off the heat', 'Top with banana + walnuts'] },
+      { name: 'Greek yogurt bowl', desc: 'Thick yogurt, berries, granola, honey.', kcal: 420, protein: 32, veg: true, lf: false, gf: false, nf: true, ai: true, ing: ['Greek yogurt', 'Mixed berries', 'Granola', 'Honey'], prep: ['Spoon yogurt into a bowl', 'Add berries + granola', 'Drizzle honey'] },
+      { name: 'Eggs on sourdough', desc: 'Three eggs, smashed avocado, chilli.', kcal: 520, protein: 28, veg: true, lf: true, gf: false, nf: true, ai: false, ing: ['Eggs', 'Sourdough', 'Avocado', 'Chilli flakes'], prep: ['Toast the sourdough', 'Scramble eggs low + slow', 'Smash avocado on top'] },
+      { name: 'Tofu scramble & greens', desc: 'Turmeric tofu, spinach, GF toast.', kcal: 440, protein: 26, veg: true, lf: true, gf: true, nf: true, ai: true, ing: ['Firm tofu', 'Spinach', 'Turmeric', 'GF bread'], prep: ['Crumble tofu into a hot pan', 'Season with turmeric + pepper', 'Wilt spinach through'] } ],
+    lunch: [
+      { name: 'Chicken burrito bowl', desc: 'Rice, black beans, salsa, corn, lime.', kcal: 650, protein: 45, veg: false, lf: true, gf: true, nf: true, ai: false, ing: ['Chicken breast', 'Rice', 'Black beans', 'Salsa', 'Corn', 'Limes'], prep: ['Grill seasoned chicken 6 min/side', 'Bowl rice + beans + corn', 'Slice chicken, salsa, lime'] },
+      { name: 'Tofu poke bowl', desc: 'Tamari tofu, sushi rice, edamame, mango.', kcal: 580, protein: 30, veg: true, lf: true, gf: true, nf: true, ai: true, ing: ['Firm tofu', 'Sushi rice', 'Edamame', 'Tamari (GF)', 'Mango'], prep: ['Cube + marinate tofu 10 min', 'Cook rice, cool slightly', 'Assemble with edamame + mango'] },
+      { name: 'Turkey club wrap', desc: 'Turkey, lettuce, tomato, wholegrain wrap.', kcal: 560, protein: 40, veg: false, lf: true, gf: false, nf: true, ai: false, ing: ['Turkey slices', 'Wholegrain wraps', 'Lettuce', 'Tomatoes'], prep: ['Lay fillings on the wrap', 'Roll tight, tuck the ends', 'Halve on the diagonal'] },
+      { name: 'Lentil & halloumi salad', desc: 'Warm lentils, grilled halloumi, rocket.', kcal: 540, protein: 28, veg: true, lf: false, gf: true, nf: true, ai: true, ing: ['Lentils', 'Halloumi', 'Rocket', 'Lemon', 'Olive oil'], prep: ['Warm lentils with olive oil', 'Grill halloumi 2 min/side', 'Toss with rocket + lemon'] } ],
+    dinner: [
+      { name: 'Salmon & quinoa', desc: 'Baked salmon, quinoa, charred broccoli.', kcal: 640, protein: 42, veg: false, lf: true, gf: true, nf: true, ai: true, ing: ['Salmon fillets', 'Quinoa', 'Broccoli', 'Lemon'], prep: ['Bake salmon 12 min at 200°', 'Simmer quinoa 15 min', 'Char broccoli in a hot pan'] },
+      { name: 'Steak & sweet potato', desc: 'Sirloin, roast sweet potato, greens.', kcal: 700, protein: 48, veg: false, lf: true, gf: true, nf: true, ai: false, ing: ['Sirloin steak', 'Sweet potatoes', 'Green beans'], prep: ['Roast sweet potato 30 min', 'Pan-sear steak, rest 5 min', 'Steam the greens'] },
+      { name: 'Paneer tikka & rice', desc: 'Charred paneer, basmati, raita.', kcal: 620, protein: 32, veg: true, lf: false, gf: true, nf: true, ai: true, ing: ['Paneer', 'Basmati rice', 'Yogurt', 'Tikka paste', 'Cucumber'], prep: ['Coat paneer in tikka + yogurt', 'Grill until charred', 'Serve on rice with raita'] },
+      { name: 'Chickpea spinach curry', desc: 'Coconut base, brown rice, coriander.', kcal: 560, protein: 24, veg: true, lf: true, gf: true, nf: true, ai: true, ing: ['Chickpeas', 'Spinach', 'Coconut milk', 'Brown rice', 'Curry paste'], prep: ['Fry paste, add coconut milk', 'Simmer chickpeas 10 min', 'Wilt spinach, serve on rice'] } ],
+    snack: [
+      { name: 'Protein shake & almonds', desc: 'One scoop whey, a handful of almonds.', kcal: 300, protein: 30, veg: true, lf: false, gf: true, nf: false, ai: true, ing: ['Whey protein', 'Almonds', 'Milk'], prep: ['Shake whey with milk', 'Count out ~20 almonds'] },
+      { name: 'Cottage cheese & pineapple', desc: 'High-protein, post-session friendly.', kcal: 220, protein: 24, veg: true, lf: false, gf: true, nf: true, ai: false, ing: ['Cottage cheese', 'Pineapple'], prep: ['Spoon cottage cheese', 'Top with pineapple chunks'] },
+      { name: 'Beef jerky & apple', desc: 'Portable protein plus quick carbs.', kcal: 250, protein: 26, veg: false, lf: true, gf: true, nf: true, ai: false, ing: ['Beef jerky', 'Apples'], prep: ['Pack it. Eat it.'] },
+      { name: 'Hummus & veggie sticks', desc: 'Carrot, cucumber, pepper, hummus.', kcal: 200, protein: 8, veg: true, lf: true, gf: true, nf: true, ai: true, ing: ['Hummus', 'Carrots', 'Cucumber', 'Peppers'], prep: ['Cut veg into batons', 'Dip generously'] } ]
+  };
+  DIETARY = [['veg', 'Vegetarian'], ['lf', 'Lactose-free'], ['gf', 'Gluten-free'], ['nf', 'Nut-free']];
+  INJURIES = [['knee', 'Knee'], ['shoulder', 'Shoulder'], ['back', 'Lower back'], ['wrist', 'Wrist / elbow']];
+  DEVICES = [
+    { id: 'watch', n: 'Smartwatch', d: 'Heart rate, workouts, sleep' },
+    { id: 'phone', n: 'Android phone — Health Connect', d: 'Steps, HR, sleep · first platform target' },
+    { id: 'hrm', n: 'iPhone — Apple HealthKit', d: 'Parallel track after Android' },
+    { id: 'scale', n: 'Smart scale', d: 'Weight auto-logged via the linked phone' }
+  ];
+  STRETCHES = [
+    { n: 'Morning mobility flow', min: 8, steps: [{ t: 'Cat–cow × 8, slow' }, { t: 'Hip circles × 10 each way' }, { t: 'World\u2019s greatest stretch × 5 / side' }, { t: 'Standing hamstring reach × 8' }] },
+    { n: 'Desk reset — express', min: 10, steps: [{ t: 'Chin tucks × 10' }, { t: 'Doorway chest stretch 45 s / side' }, { t: 'Thoracic rotations × 8 / side' }, { t: 'Wrist + finger opener 60 s' }] },
+    { n: 'Evening unwind', min: 12, steps: [{ t: 'Child\u2019s pose 90 s' }, { t: 'Figure-4 stretch 60 s / side' }, { t: 'Supine twist 60 s / side' }, { t: 'Legs up the wall 3 min' }] }
+  ];
+  LYMPH = ['10 deep belly breaths — opens the system', 'Neck: gentle downward strokes × 10 / side', 'Armpit pump: raise + lower arms × 15', 'Belly: slow clockwise circles × 10', 'Ankle pumps + calf strokes × 15 / leg'];
+  MILESTONES = ['Touch toes with soft knees', 'Full-depth goblet squat', '30 s single-leg balance / side', 'Arms overhead, ribs down', '60 s side plank each side'];
+  CAMTIPS = ['Knees drifted inward on the last few reps — think "push the floor apart".', 'Tempo rushed at the bottom. Own the lowering: 2 seconds down.', 'Neck craned up — look at the floor 2 m ahead, keep it neutral.', 'Solid set. Brace a touch earlier — before the rep starts, not during.', 'Heels lifted on the last rep — sit back into the heels more.'];
+  toggleDisc = () => this.setState((s) => ({ discChecked: !s.discChecked }));
+  acceptDisc = () => this.setP({ accepted: true });
+  reopenDisc = () => this.setP({ accepted: false, discChecked: false });
+  redoWizard = () => this.setP({ onboardDone: false, obStep: 0 });
+  obNext = () => this.setState((s) => ({ obStep: Math.min(6, s.obStep + 1) }));
+  obBack = () => this.setState((s) => ({ obStep: Math.max(0, s.obStep - 1) }));
+  obFinish = () => this.setP({ onboardDone: true, nav: 'home' });
+  toggleAvail = (e) => { const i = +e.currentTarget.dataset.d; this.setP((s) => { const a = s.settings.availDays.includes(i) ? s.settings.availDays.filter((x) => x !== i) : [...s.settings.availDays, i].sort(); return { settings: { ...s.settings, availDays: a } }; }); };
+  setPrefTime = (e) => this.setP((s) => ({ settings: { ...s.settings, prefTime: e.target.value } }));
+  toggleDietary = (e) => { const id = e.currentTarget.dataset.id; this.setP((s) => ({ settings: { ...s.settings, dietary: s.settings.dietary.includes(id) ? s.settings.dietary.filter((x) => x !== id) : [...s.settings.dietary, id] } })); };
+  toggleInjury = (e) => { const id = e.currentTarget.dataset.id; this.setP((s) => ({ settings: { ...s.settings, injuries: s.settings.injuries.includes(id) ? s.settings.injuries.filter((x) => x !== id) : [...s.settings.injuries, id] } })); };
+  connectDevice = (e) => {
+    const id = e.currentTarget.dataset.id;
+    if (this.state.devices[id]) { this.setP((s) => ({ devices: { ...s.devices, [id]: false } })); return; }
+    if (this.state.pairing) return;
+    this.setState({ pairing: id });
+    this.pairTo = setTimeout(() => this.setP((s) => ({ devices: { ...s.devices, [id]: true }, pairing: null })), 1400);
+  };
+  setNav = (e) => { this.stopTimers(); if (this.state.camScreen) this.closeCamQuiet(); this.setState({ nav: e.currentTarget.dataset.id, detailEx: null, camScreen: false }); };
+  goWorkouts = () => this.setState({ nav: 'workouts', detailEx: null, camScreen: false });
+  goRecovery = () => this.setState({ nav: 'recovery', detailEx: null, camScreen: false });
+  goBreathe = () => { this.setState({ nav: 'recovery', detailEx: null, camScreen: false }); if (!this.state.breathRun) this.toggleBreath(); };
+  goDiet = () => this.setState({ nav: 'diet', detailEx: null, camScreen: false });
+  goProgress = () => this.setState({ nav: 'progress', detailEx: null, camScreen: false });
+  stopTimers() { clearInterval(this.repIv); clearInterval(this.brIv); this.setState({ repRun: false, breathRun: false }); }
+  setGoal = (e) => this.setP((s) => ({ settings: { ...s.settings, goal: e.currentTarget.dataset.id } }));
+  toggleMuscle = (e) => { const id = e.currentTarget.dataset.id; this.setP((s) => ({ settings: { ...s.settings, muscles: s.settings.muscles.includes(id) ? s.settings.muscles.filter((m) => m !== id) : [...s.settings.muscles, id] } })); };
+  setLevel = (e) => this.setP((s) => ({ settings: { ...s.settings, level: e.target.value } }));
+  setKit = (e) => this.setP((s) => ({ settings: { ...s.settings, kit: e.target.value } }));
+  setLen = (e) => this.setP((s) => ({ settings: { ...s.settings, len: +e.target.value } }));
+  swapMeal = (e) => { const slot = e.currentTarget.dataset.slot; this.setP((s) => ({ mealIdx: { ...s.mealIdx, [slot]: (s.mealIdx[slot] || 0) + 1 } })); };
+  setDraft = (e) => { const k = e.currentTarget.dataset.k, v = +e.currentTarget.dataset.v; this.setState((s) => ({ draft: { ...s.draft, [k]: v } })); };
+  saveCheckin = () => { const d = this.state.draft; const entry = { date: this.today(), sleep: d.sleep || 3, stress: d.stress || 3, energy: d.energy || 3 }; this.setP((s) => ({ checkins: [...s.checkins.filter((c) => c.date !== entry.date), entry], draft: { sleep: 0, stress: 0, energy: 0 } })); this.logActivity(); };
+  addWater = () => { const t = this.today(); this.setP((s) => ({ hydro: { date: t, ml: (s.hydro.date === t ? s.hydro.ml : 0) + 250 } })); };
+  setWInput = (e) => this.setState({ wInput: e.target.value });
+  setHeight = (e) => this.setP({ height: e.target.value });
+  setAge = (e) => this.setP({ profileAge: e.target.value });
+  setSex = (e) => this.setP({ profileSex: e.target.value });
+  addWeight = () => { const v = parseFloat(this.state.wInput); if (!v || v < 20 || v > 300) return; this.setP((s) => ({ weights: [...s.weights, { date: this.today(), kg: v }].slice(-30), wInput: '' })); };
+  toggleMilestone = (e) => { const i = +e.currentTarget.dataset.i; this.setP((s) => ({ mobility: s.mobility.map((m, j) => (j === i ? !m : m)) })); };
+  logSession = () => { const min = this.state.settings.len; this.setP((s) => ({ sessions: s.sessions + 1, events: [...s.events, { date: this.today(), type: 'Workout', min, hr: '', dist: '' }].slice(-60) })); this.logActivity(); };
+  setEvType = (e) => this.setState({ evType: e.target.value });
+  setEvMin = (e) => this.setState({ evMin: e.target.value });
+  setEvHr = (e) => this.setState({ evHr: e.target.value });
+  setEvDist = (e) => this.setState({ evDist: e.target.value });
+  setSearchQ = (e) => this.setState({ searchQ: e.target.value });
+  toggleFriend = () => {};
+  addEvent = () => {
+    const min = parseInt(this.state.evMin, 10);
+    if (!min || min <= 0) return;
+    const ev = { date: this.today(), type: this.state.evType, min, hr: this.state.evHr ? parseInt(this.state.evHr, 10) : '', dist: this.state.evDist ? parseFloat(this.state.evDist) : '' };
+    this.setP((s) => ({ events: [...s.events, ev].slice(-60), evMin: '', evHr: '', evDist: '' }));
+    this.logActivity();
+  };
+  MEDIA_TERMS = { 'Dumbbell floor press': 'dumbbell bench press', 'Dumbbell squeeze press': 'dumbbell chest press', 'One-arm dumbbell row': 'dumbbell row', 'Superman hold': 'superman exercise', 'Prone Y-raise': 'shoulder raise exercise', 'Dumbbell Romanian deadlift': 'Romanian deadlift', 'Seated dumbbell press': 'dumbbell shoulder press', 'Overhead triceps extension': 'triceps extension', 'Chair dip': 'bench dips', 'Dead bug': 'dead bug exercise', 'Bird dog': 'bird dog exercise', 'Suitcase carry': 'farmers walk', 'Reverse lunge + curl': 'lunge exercise', 'Step-up': 'step-up strength training', 'Inchworm walk-out': 'inchworm exercise' };
+  async loadExMedia(name) {
+    this.setState({ exImg: null, exVid: false, exImgLoading: true });
+    const base = this.MEDIA_TERMS[name] || name.replace(/Dumbbell |dumbbell /g, '');
+    let img = null, vid = false;
+    for (const term of [base + ' exercise', base]) {
+      try {
+        const q = 'https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=' + encodeURIComponent(term) + '&gsrnamespace=6&gsrlimit=6&prop=imageinfo&iiprop=url|mime&iiurlwidth=800&format=json&origin=*';
+        const r = await fetch(q);
+        if (r.ok) {
+          const j = await r.json();
+          const pages = Object.values((j.query || {}).pages || {}).sort((a, b) => (a.index || 9) - (b.index || 9));
+          const okMime = ['image/jpeg', 'image/png', 'image/gif', 'video/webm'];
+          let kws = base.toLowerCase().split(/[^a-z]+/).filter((w) => w.length > 3 && !['exercise', 'with', 'hold', 'seated', 'standing'].includes(w));
+          if (!kws.length) kws = base.toLowerCase().split(/[^a-z]+/).filter((w) => w.length > 2 && w !== 'exercise');
+          const junk = /military|casualty|inspection|troops|medics|dvids|navy|army|air force|soldier|marine corps|police|drill/i;
+          const pick = pages.find((p) => p.imageinfo && p.imageinfo[0] && okMime.includes(p.imageinfo[0].mime) && !junk.test(p.title || '') && kws.some((w) => (p.title || '').toLowerCase().replace(/[^a-z]+/g, ' ').includes(w)));
+          if (pick) { const info = pick.imageinfo[0]; vid = info.mime === 'video/webm'; img = vid ? info.url : (info.thumburl || info.url); break; }
+        }
+      } catch (e) {}
+    }
+    if (this.state.detailEx === name) this.setState({ exImg: img, exVid: vid, exImgLoading: false });
+  }
+  openEx = (e) => { const name = e.currentTarget.dataset.ex; this.setState({ detailEx: name, repRun: false, repSec: 0 }); this.loadExMedia(name); };
+  closeEx = () => { clearInterval(this.repIv); this.setState({ detailEx: null, repRun: false }); };
+  toggleRepTimer = () => { if (this.state.repRun) { clearInterval(this.repIv); this.setState({ repRun: false }); } else { this.repIv = setInterval(() => this.setState((s) => ({ repSec: s.repSec + 1 })), 1000); this.setState({ repRun: true }); } };
+  resetRepTimer = () => { clearInterval(this.repIv); this.setState({ repRun: false, repSec: 0 }); };
+  toggleBreath = () => { if (this.state.breathRun) { clearInterval(this.brIv); this.setState({ breathRun: false }); } else { this.setState({ breathRun: true, breathSec: 0 }); this.brIv = setInterval(() => this.setState((s) => ({ breathSec: s.breathSec + 1 })), 1000); } };
+  openCamHome = () => { this.setState({ camScreen: true, camEx: this.state.detailEx, camErr: false, camTip: null, clipUrl: null, reps: 0, setOn: false, recOn: false }, () => this.startCam()); };
+  async startCam() {
+    try {
+      this.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+      this.setState({ camOn: true }, () => { if (this.vidRef.current) this.vidRef.current.srcObject = this.stream; });
+    } catch (e) { this.setState({ camErr: true }); }
+  }
+  closeCamQuiet() { clearInterval(this.setIv); if (this.rec && this.rec.state === 'recording') { try { this.rec.stop(); } catch (e) {} } if (this.stream) { this.stream.getTracks().forEach((t) => t.stop()); this.stream = null; } }
+  closeCam = () => { this.closeCamQuiet(); this.setState({ camScreen: false, camOn: false, setOn: false, recOn: false }); };
+  toggleSet = () => {
+    if (this.state.setOn) {
+      clearInterval(this.setIv);
+      const secs = Math.max(1, Math.round((Date.now() - (this.setStart || Date.now())) / 1000));
+      const st = this.state, set = st.settings;
+      this.setState({ setOn: false, camTip: 'Coach is reviewing your set…' });
+      const inj = set.injuries.length ? set.injuries.join(', ') : 'none';
+      const exn = st.camEx || 'a strength exercise';
+      const p = window.claude.complete({
+        system: 'You are a direct, encouraging strength coach for clients over 40. Reply with ONE concrete coaching cue about tempo, form or pacing. Max 2 short sentences. No preamble.',
+        messages: [{ role: 'user', content: 'Client just finished a set of ' + exn + ': ' + st.reps + ' reps in ' + secs + ' seconds (' + (secs / Math.max(1, st.reps)).toFixed(1) + ' s per rep). Goal: ' + set.goal + '. Level: ' + set.level + '. Injuries to work around: ' + inj + '.' }]
+      });
+      Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 9000))])
+        .then((t) => this.setState({ camTip: t }))
+        .catch(() => this.setState({ camTip: this.CAMTIPS[Math.floor(Math.random() * this.CAMTIPS.length)] }));
+    } else {
+      this.setStart = Date.now();
+      this.setState({ setOn: true, reps: 0, camTip: null });
+      this.setIv = setInterval(() => this.setState((s) => ({ reps: s.reps + 1 })), 2800);
+    }
+  };
+  toggleGuide = () => this.setState((s) => ({ showGuide: !s.showGuide }));
+  toggleRec = () => {
+    if (this.state.recOn) { if (this.rec && this.rec.state === 'recording') this.rec.stop(); this.setState({ recOn: false }); }
+    else if (this.stream) {
+      try {
+        this.chunks = [];
+        this.rec = new MediaRecorder(this.stream);
+        this.rec.ondataavailable = (ev) => { if (ev.data.size) this.chunks.push(ev.data); };
+        this.rec.onstop = () => { const url = URL.createObjectURL(new Blob(this.chunks, { type: 'video/webm' })); this.setState({ clipUrl: url }); };
+        this.rec.start();
+        this.setState({ recOn: true, clipUrl: null });
+      } catch (e) {}
+    }
+  };
+  findEx(name) { for (const key of Object.keys(this.DB)) { const hit = this.DB[key].ex.find((x) => x.n === name); if (hit) return { ...hit, muscle: this.DB[key].label }; } return null; }
+  renderVals() {
+    const s = this.state, set = s.settings, g = this.GOALS[set.goal];
+    const on = { bg: 'var(--color-accent)', fg: 'var(--color-bg)', bc: 'var(--color-accent)' };
+    const off = { bg: 'transparent', fg: 'inherit', bc: 'var(--color-divider)' };
+    const showDisclaimer = !s.accepted;
+    const showWizard = s.accepted && !s.onboardDone;
+    const showApp = s.accepted && s.onboardDone;
+    const DNAMES = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+    const availOpts = DNAMES.map((label, i) => ({ i, label, ...(set.availDays.includes(i) ? on : off) }));
+    const goalOpts = Object.entries(this.GOALS).map(([id, v]) => ({ id, label: v.label, desc: v.desc, ...(id === set.goal ? on : off) }));
+    const muscleOpts = Object.entries(this.DB).map(([id, v]) => ({ id, label: v.label, ...(set.muscles.includes(id) ? on : off) }));
+    const injuryOpts = this.INJURIES.map(([id, label]) => ({ id, label, ...(set.injuries.includes(id) ? on : off) }));
+    const dietaryOpts = this.DIETARY.map(([id, label]) => ({ id, label, ...(set.dietary.includes(id) ? on : off) }));
+    const levelOpts = ['beginner', 'intermediate', 'advanced'].map((id) => ({ id, label: id[0].toUpperCase() + id.slice(1, 3), active: set.level === id }));
+    const kitOpts = [{ id: 'bw', label: 'Bodyweight' }, { id: 'dbbw', label: '+ Dumbbells' }].map((o) => ({ ...o, active: set.kit === o.id }));
+    const lenOpts = [10, 20, 30, 45, 60].map((n) => ({ id: String(n), label: n + '′', active: set.len === n }));
+    const timeOpts = [{ id: 'morning', label: 'Morning' }, { id: 'lunch', label: 'Lunchtime' }, { id: 'evening', label: 'Evening' }].map((o) => ({ ...o, active: set.prefTime === o.id }));
+    const deviceRows = this.DEVICES.map((d) => ({ ...d, status: s.pairing === d.id ? 'PAIRING…' : s.devices[d.id] ? 'CONNECTED' : 'NOT LINKED', tagClass: s.devices[d.id] ? 'tag-accent' : 'tag-neutral', btn: s.pairing === d.id ? 'Pairing…' : s.devices[d.id] ? 'Disconnect' : 'Connect' }));
+    const dietaryNames = set.dietary.map((id) => (this.DIETARY.find(([k]) => k === id) || [])[1]).filter(Boolean);
+    let sets2 = g.sets + (set.level === 'beginner' ? -1 : set.level === 'advanced' ? 1 : 0); sets2 = Math.max(2, sets2);
+    const safe = (list) => list.filter((x) => (set.kit === 'dbbw' || x.k === 'bw') && !(x.av || []).some((j) => set.injuries.includes(j)));
+    const pool = {}; Object.keys(this.DB).forEach((k) => { let p = safe(this.DB[k].ex); if (!p.length) p = safe(this.DB.core.ex); if (!p.length) p = [this.DB.core.ex[0]]; pool[k] = p; });
+    const sel = set.muscles.length ? set.muscles : ['full'];
+    const budget = { 10: 2, 20: 3, 30: 4, 45: 6, 60: 7 }[set.len] || 4;
+    const N = Math.max(1, set.availDays.length);
+    const groups = Array.from({ length: N }, () => []);
+    sel.forEach((m, i) => groups[i % N].push(m));
+    groups.forEach((grp, i) => { if (!grp.length) grp.push(sel[i % sel.length]); });
+    const days = groups.map((grp, di) => {
+      const per = Math.max(1, Math.round(budget / grp.length)); const exercises = [];
+      grp.forEach((m) => { const list = pool[m]; const off2 = (di * 2) % list.length;
+        for (let k = 0; k < per && exercises.length < budget; k++) exercises.push({ name: list[(off2 + k) % list.length].n, scheme: sets2 + ' × ' + g.reps, rest: g.rest }); });
+      if (g.finisher && set.len >= 20) exercises.push({ name: this.FINISHERS[di % this.FINISHERS.length], scheme: 'Finisher', rest: '—' });
+      return { label: DNAMES[set.availDays[di] ?? di] + ' — DAY 0' + (di + 1), focus: grp.map((m) => this.DB[m].label).join(' · '), exercises, tip: g.tips[di % g.tips.length], delay: (di * 0.07).toFixed(2) + 's' };
+    });
+    const now = new Date(); const dow = now.getDay();
+    const TRAIN_DOW = set.availDays;
+    const sunday = new Date(now); sunday.setDate(now.getDate() - dow);
+    const weekDays = DNAMES.map((d, i) => { const dt = new Date(sunday); dt.setDate(sunday.getDate() + i); const train = TRAIN_DOW.includes(i);
+      return { d, n: dt.getDate(), k: train ? 'TRAIN' : 'REST', bg: i === dow ? 'var(--color-accent)' : 'transparent', fg: i === dow ? 'var(--color-bg)' : 'inherit', op: train || i === dow ? '1' : '0.45' }; });
+    const isTrainingDay = TRAIN_DOW.includes(dow);
+    const trainIdx = TRAIN_DOW.filter((x) => x <= dow).length - 1;
+    const todayPlan = isTrainingDay && days.length ? days[Math.max(0, trainIdx) % days.length] : null;
+    const today = this.today();
+    const ci = s.checkins.find((c) => c.date === today);
+    const last7 = s.checkins.slice(-7);
+    const spark = (arr, key, w, h) => arr.map((c, i) => (arr.length === 1 ? w / 2 : (i * w) / (arr.length - 1)).toFixed(1) + ',' + (h - (c[key] / 5) * (h - 6) - 2).toFixed(1)).join(' ');
+    const streakCalc = () => { const setA = new Set(s.activity); let n = 0; const d = new Date(); if (!setA.has(this.today())) d.setDate(d.getDate() - 1);
+      for (;;) { const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); if (setA.has(key)) { n++; d.setDate(d.getDate() - 1); } else break; } return n; };
+    const hydroMl = s.hydro.date === today ? s.hydro.ml : 0;
+    const scale5 = (k) => [1, 2, 3, 4, 5].map((v) => ({ v, ...(s.draft[k] === v ? on : off) }));
+    const REQNAMES = { veg: 'VEG', lf: 'LACTOSE-FREE', gf: 'GLUTEN-FREE', nf: 'NUT-FREE' };
+    const slots = ['breakfast', 'lunch', 'dinner', 'snack'];
+    const meals = slots.map((slot, i) => { let opts = this.MEALS[slot].filter((o) => set.dietary.every((r) => o[r])); if (!opts.length) opts = this.MEALS[slot];
+      const pick = opts[(s.mealIdx[slot] || 0) % opts.length];
+      return { id: slot, slot: slot.toUpperCase(), delay: (i * 0.06).toFixed(2) + 's', ...pick, prep: pick.prep.map((t, j) => ({ n: j + 1, t })), reqTags: ['veg', 'lf', 'gf', 'nf'].filter((r) => pick[r]).map((r) => ({ t: REQNAMES[r] })) }; });
+    const grocery = []; meals.forEach((m) => m.ing.forEach((it) => { if (!grocery.find((x) => x.item === it)) grocery.push({ item: it }); }));
+    const ex = s.detailEx ? this.findEx(s.detailEx) : null;
+    const fmt = (sec) => Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
+    const bPhaseIdx = Math.floor((s.breathSec % 16) / 4);
+    const wk = s.weights;
+    const weekKeys = weekDays.map((w, i) => { const dt = new Date(sunday); dt.setDate(sunday.getDate() + i); return dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0'); });
+    const weekDone = s.activity.filter((a) => weekKeys.includes(a)).length;
+    const kcalAdj = set.dietary.includes('veg') ? -100 : 0;
+    const timeLabels = { morning: '07:00', lunch: '12:30', evening: '18:00' };
+    const NAVS = [['home', 'Home', 'HOME'], ['workouts', 'Workouts', 'TRAIN'], ['diet', 'Diet', 'DIET'], ['recovery', 'Recovery', 'RECOVER'], ['social', 'Social', 'SOCIAL'], ['progress', 'Progress', 'PROGRESS'], ['settings', 'Settings', 'SETUP']];
+    const navItems = NAVS.map(([id, label, short]) => ({ id, label, short, bg: s.nav === id ? 'var(--color-accent)' : 'transparent', fg: s.nav === id ? 'var(--color-bg)' : 'inherit', tc: s.nav === id ? 'var(--color-accent)' : 'color-mix(in srgb, var(--color-text) 55%, transparent)', tb: s.nav === id ? 'var(--color-accent)' : 'transparent' }));
+    const STEPN = ['Schedule', 'Time', 'Goal', 'Focus & injuries', 'Dietary', 'Equipment', 'Devices'];
+    const anyDevice = Object.values(s.devices).some(Boolean);
+    const weekEvents = s.events.filter((ev) => weekKeys.includes(ev.date));
+    const activeMin = weekEvents.reduce((a, ev) => a + (ev.min || 0), 0);
+    const dLeft = 7 - dow;
+    const evFmt = (ev) => { const p = [ev.min + ' min']; if (ev.hr) p.push(ev.hr + ' bpm'); if (ev.dist) p.push(ev.dist + ' km'); return p.join(' · '); };
+    const eventRows = s.events.slice(-8).reverse().map((ev) => ({ type: ev.type.toUpperCase(), date: ev.date, detail: evFmt(ev) }));
+    return {
+      showDisclaimer, showWizard, showApp,
+      discChecked: s.discChecked, toggleDisc: this.toggleDisc, acceptDisc: this.acceptDisc, discBtnDisabled: !s.discChecked,
+      discBoxBg: s.discChecked ? 'var(--color-accent)' : 'transparent', discBoxBc: s.discChecked ? 'var(--color-accent)' : 'var(--color-divider)',
+      obStepLabel: 'STEP ' + (s.obStep + 1) + ' OF 7 — ' + STEPN[s.obStep].toUpperCase(), obPct: (((s.obStep + 1) / 7) * 100).toFixed(0) + '%',
+      obS0: s.obStep === 0, obS1: s.obStep === 1, obS2: s.obStep === 2, obS3: s.obStep === 3, obS4: s.obStep === 4, obS5: s.obStep === 5, obS6: s.obStep === 6,
+      obNext: this.obNext, obBack: this.obBack, obFinish: this.obFinish,
+      obNotLast: s.obStep < 6, obLast: s.obStep === 6, obBackVis: s.obStep === 0 ? 'hidden' : 'visible',
+      obNextDisabled: s.obStep === 0 && set.availDays.length === 0,
+      availSummary: set.availDays.length ? set.availDays.length + ' training day(s) / week — the rest are scheduled recovery.' : 'Pick at least one day to continue.',
+      dietarySummary: set.dietary.length ? 'Active: ' + dietaryNames.join(', ') + '.' : 'None selected — all meals available.',
+      obSummary: g.label + ' · ' + Math.max(1, set.availDays.length) + ' day(s)/week (' + set.availDays.map((i) => DNAMES[i]).join(', ') + ') · ' + set.len + ' min, ' + (timeOpts.find((o) => o.active) || {}).label + ' · ' + (set.kit === 'dbbw' ? 'bodyweight + dumbbells' : 'bodyweight only') + (set.injuries.length ? ' · working around: ' + set.injuries.map((i) => (this.INJURIES.find(([k]) => k === i) || [])[1]).join(', ').toLowerCase() : '') + (dietaryNames.length ? ' · dietary: ' + dietaryNames.join(', ').toLowerCase() : ''),
+      availOpts, toggleAvail: this.toggleAvail, timeOpts, setPrefTime: this.setPrefTime,
+      injuryOpts, toggleInjury: this.toggleInjury, dietaryOpts, toggleDietary: this.toggleDietary,
+      deviceRows, connectDevice: this.connectDevice, anyDevice, deviceCount: Object.values(s.devices).filter(Boolean).length,
+      scaleConnected: s.devices.scale,
+      navItems, setNav: this.setNav, streak: streakCalc(),
+      todayLabel: DNAMES[dow] + ' ' + now.getDate() + ' ' + ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'][now.getMonth()],
+      screenTitle: s.camScreen ? 'GYM APP — LIVE' : 'GYM APP',
+      showHome: s.nav === 'home' && !s.camScreen, showWorkouts: s.nav === 'workouts' && !s.detailEx && !s.camScreen,
+      showDetail: !!s.detailEx && !s.camScreen, showCamera: s.camScreen,
+      showDiet: s.nav === 'diet' && !s.camScreen, showRecovery: s.nav === 'recovery' && !s.camScreen,
+      showProgress: s.nav === 'progress' && !s.camScreen, showSettings: s.nav === 'settings' && !s.camScreen,
+      weekDays, isTrainingDay, isRestDay: !isTrainingDay,
+      prefTimeLabel: timeLabels[set.prefTime] || '07:00',
+      todayFocus: todayPlan ? todayPlan.focus + ' · ' + (set.kit === 'dbbw' ? 'dumbbells' : 'bodyweight') : '',
+      lengthLabel: set.len + ' MIN',
+      checkinOpen: !ci, checkinDone: !!ci,
+      checkinSummary: ci ? 'Sleep ' + ci.sleep + ' · Stress ' + ci.stress + ' · Energy ' + ci.energy : '',
+      checkRows: [{ id: 'sleep', label: 'Sleep', opts: scale5('sleep') }, { id: 'stress', label: 'Stress', opts: scale5('stress') }, { id: 'energy', label: 'Energy', opts: scale5('energy') }],
+      setDraft: this.setDraft, saveCheckin: this.saveCheckin,
+      haveTrend: last7.length >= 2, noTrend: last7.length < 2,
+      energyPoints: spark(last7, 'energy', 120, 34), energyPointsBig: spark(last7, 'energy', 240, 60), stressPointsBig: spark(last7, 'stress', 240, 60),
+      hydroLabel: (hydroMl / 1000).toFixed(2).replace(/\.?0+$/, '') + ' / 2.5 L', hydroPct: Math.min(100, (hydroMl / 2500) * 100).toFixed(0) + '%', addWater: this.addWater,
+      dinnerName: meals[2].name, dinnerTag: meals[2].ai ? 'ANTI-INFLAM.' : meals[2].kcal + ' KCAL',
+      goWorkouts: this.goWorkouts, goRecovery: this.goRecovery, goBreathe: this.goBreathe, goDiet: this.goDiet, goProgress: this.goProgress, openCamHome: this.openCamHome,
+      weekDoneLabel: weekDone + ' of ' + N + ' this week',
+      splitName: g.split, weekLabel: N + ' sessions / week', goalLabel: g.label,
+      focusLabel: sel.map((m) => this.DB[m].label).join(' · '),
+      hasInjuries: set.injuries.length > 0, injuryLabel: set.injuries.map((i) => (this.INJURIES.find(([k]) => k === i) || [])[1]).join(' · ').toUpperCase(),
+      hasDietary: set.dietary.length > 0, dietaryLabel: dietaryNames.join(' · '),
+      days, openEx: this.openEx, logSession: this.logSession,
+      exName: ex ? ex.n : '', exMuscle: ex ? ex.muscle.toUpperCase() : '', exScheme: sets2 + ' × ' + g.reps, exRest: g.rest,
+      exCues: ex ? ex.c.map((t, i) => ({ n: '0' + (i + 1), t })) : [], exSafety: ex ? ex.s : '', exEasier: ex ? ex.e : '', exHarder: ex ? ex.h : '',
+      closeEx: this.closeEx, repClock: fmt(s.repSec), repBtnLabel: s.repRun ? 'Pause' : 'Start set', toggleRepTimer: this.toggleRepTimer, resetRepTimer: this.resetRepTimer,
+      vidRef: this.vidRef, camErr: s.camErr, camErrMsg: 'Camera unavailable — check browser permissions, then close and reopen live mode.',
+      reps: s.reps, setOn: s.setOn, setBtnLabel: s.setOn ? 'End set → get feedback' : 'Start set', toggleSet: this.toggleSet,
+      showHr: s.devices.watch || s.devices.phone, liveHr: s.setOn ? Math.min(148, 96 + s.reps * 3 + (s.reps % 2 ? 3 : 0)) : 72,
+      recOn: s.recOn, recBtnLabel: s.recOn ? '■ Stop recording' : '● Record set', toggleRec: this.toggleRec,
+      showGuide: !!s.showGuide, guideBtnLabel: s.showGuide ? 'Hide posture guide' : 'Posture guide', closeCam: this.closeCam,
+      camTip: !!s.camTip, camTipText: s.camTip || '', hasClip: !!s.clipUrl, clipUrl: s.clipUrl,
+      ...((() => {
+        const hCm2 = parseFloat(s.height), ageV = parseInt(s.profileAge, 10) || 0, lastKg2 = wk.length ? wk[wk.length - 1].kg : 0;
+        let tK = g.kcal + kcalAdj, tP = g.protein, tC = g.carbs, tF = g.fat, note = 'Goal defaults — add weight, height and age in Progress for personal targets.';
+        if (hCm2 >= 100 && lastKg2 && ageV >= 18 && ageV < 100) {
+          const bmr = 10 * lastKg2 + 6.25 * hCm2 - 5 * ageV + (s.profileSex === 'f' ? -161 : 5);
+          const mult = { fat: 0.8, muscle: 1.1, strength: 1.1, endurance: 1.05, general: 1 }[set.goal] || 1;
+          tK = Math.round((bmr * 1.45 * mult) / 10) * 10 + kcalAdj;
+          tP = Math.round((lastKg2 * (set.goal === 'fat' ? 1.8 : 1.6)) / 5) * 5;
+          tF = Math.round((tK * 0.27) / 9 / 5) * 5;
+          tC = Math.max(0, Math.round((tK - tP * 4 - tF * 9) / 4 / 5) * 5);
+          note = 'Personalised from ' + lastKg2 + ' kg · ' + hCm2 + ' cm · age ' + ageV + ' (Mifflin-St Jeor × moderate activity).';
+        }
+        return { targets: [{ value: tK, label: 'kcal' }, { value: tP + ' g', label: 'protein' }, { value: tC + ' g', label: 'carbs' }, { value: tF + ' g', label: 'fat' }], targetsNote: note };
+      })()),
+      ageVal: s.profileAge || '', setAge: this.setAge,
+      sexOpts: [{ id: 'm', label: 'Male' }, { id: 'f', label: 'Female' }].map((o) => ({ ...o, active: (s.profileSex || 'm') === o.id })), setSex: this.setSex,
+      meals, swapMeal: this.swapMeal, grocery,
+      stretches: this.STRETCHES, lymphSteps: this.LYMPH.map((t, i) => ({ n: '0' + (i + 1), t })),
+      breatheAnim: s.breathRun ? 'breathe 16s ease-in-out infinite' : 'none',
+      breathPhase: s.breathRun ? ['INHALE', 'HOLD', 'EXHALE', 'HOLD'][bPhaseIdx] : 'READY',
+      breathClock: s.breathRun ? fmt(s.breathSec) + ' — 4 s per phase' : '5 minutes is plenty',
+      breathBtnLabel: s.breathRun ? 'Stop' : 'Start breathing', toggleBreath: this.toggleBreath,
+      sessionsTotal: s.sessions, weekDone, weekTarget: N, checkinCount: s.checkins.length,
+      haveWeights: wk.length >= 2, noWeights: wk.length < 2,
+      weightPoints: wk.length ? (() => { const min = Math.min(...wk.map((w) => w.kg)), max = Math.max(...wk.map((w) => w.kg)), rng = max - min || 1;
+        return wk.map((w, i) => (wk.length === 1 ? 120 : (i * 240) / (wk.length - 1)).toFixed(1) + ',' + (56 - ((w.kg - min) / rng) * 48).toFixed(1)).join(' '); })() : '',
+      weightSummary: wk.length ? 'Latest ' + wk[wk.length - 1].kg + ' kg · ' + wk.length + ' entries' : '',
+      wInput: s.wInput, setWInput: this.setWInput, addWeight: this.addWeight,
+      heightVal: s.height, setHeight: this.setHeight,
+      ...((() => {
+        const hCm = parseFloat(s.height), lastKg = wk.length ? wk[wk.length - 1].kg : null;
+        if (!hCm || hCm < 100 || hCm > 250) return { hasBmi: false, noBmi: true, bmiLine: '', rangeLine: 'Enter your height to see a suggested weight range.' };
+        const m2 = (hCm / 100) * (hCm / 100);
+        const lo = (18.5 * m2).toFixed(0), hi = (24.9 * m2).toFixed(0);
+        const range = 'Suggested range for ' + hCm + ' cm: ' + lo + '–' + hi + ' kg (a healthy span, not a target — muscle, frame and age all shift it).';
+        if (!lastKg) return { hasBmi: false, noBmi: true, bmiLine: '', rangeLine: range };
+        return { hasBmi: true, noBmi: false, bmiLine: 'BMI ' + (lastKg / m2).toFixed(1) + ' — a rough screening number only; it can\u2019t tell muscle from fat.', rangeLine: range };
+      })()),
+      milestones: this.MILESTONES.map((t, i) => ({ i, t, mark: s.mobility[i] ? '☑' : '☐', ...(s.mobility[i] ? { bg: 'var(--color-accent-100)', fg: 'var(--color-accent-800)', bc: 'var(--color-accent)' } : off) })),
+      toggleMilestone: this.toggleMilestone,
+      goalOpts, muscleOpts, levelOpts, kitOpts, lenOpts,
+      setGoal: this.setGoal, toggleMuscle: this.toggleMuscle, setLevel: this.setLevel, setKit: this.setKit, setLen: this.setLen,
+      redoWizard: this.redoWizard, reopenDisc: this.reopenDisc,
+      showSocial: s.nav === 'social' && !s.camScreen,
+      challengeDaysLeft: dLeft + (dLeft === 1 ? ' DAY LEFT' : ' DAYS LEFT'),
+      activeMin, challengePct: Math.min(100, (activeMin / 150) * 100).toFixed(0) + '%', challengeDone: activeMin >= 150,
+      evType: s.evType, evMin: s.evMin, evHr: s.evHr, evDist: s.evDist,
+      setEvType: this.setEvType, setEvMin: this.setEvMin, setEvHr: this.setEvHr, setEvDist: this.setEvDist, addEvent: this.addEvent,
+      leaderboard: [{ rank: 1, init: 'YOU', name: 'You', min: activeMin, bg: 'color-mix(in srgb, var(--color-accent) 8%, transparent)' }],
+      noFriends: true,
+      searchQ: s.searchQ, setSearchQ: this.setSearchQ, toggleFriend: this.toggleFriend,
+      userResults: s.searchQ ? [{ id: 'none', init: '—', name: 'User search needs a live backend', handle: 'accounts + sync server required', tagline: 'e.g. Supabase or Firebase', btn: 'N/A', bg: 'transparent', fg: 'inherit', bc: 'var(--color-divider)' }] : [],
+      hasEvents: s.events.length > 0, eventRows,
+      ...((() => {
+        const n = (ex ? ex.n : '').toLowerCase();
+        const inf = '2.4s ease-in-out infinite';
+        if (/squat|lunge|step|bridge|thruster/.test(n)) return { buddyGroup: 'bdyDip ' + inf, buddyArmL: 'bdyArmFwd ' + inf, buddyArmR: 'bdyArmFwd ' + inf, buddyLegs: 'bdyLegBend ' + inf, buddyLabel: 'Pattern: squat / hinge — sit down and drive up' };
+        if (/press|push|pike|extension|dip/.test(n)) return { buddyGroup: 'none', buddyArmL: 'bdyPress ' + inf, buddyArmR: 'bdyPress ' + inf, buddyLegs: 'none', buddyLabel: 'Pattern: press — drive up, lower with control' };
+        if (/curl/.test(n)) return { buddyGroup: 'none', buddyArmL: 'bdyCurl ' + inf, buddyArmR: 'bdyCurl ' + inf, buddyLegs: 'none', buddyLabel: 'Pattern: curl — elbows pinned, full lowering' };
+        if (/row|pull|raise|fly|superman/.test(n)) return { buddyGroup: 'none', buddyArmL: 'bdyRow ' + inf, buddyArmR: 'bdyRow ' + inf, buddyLegs: 'none', buddyLabel: 'Pattern: pull — elbows travel past the ribs' };
+        return { buddyGroup: 'bdyBob 1.8s ease-in-out infinite', buddyArmL: 'bdySwing 1.8s ease-in-out infinite', buddyArmR: 'bdySwingR 1.8s ease-in-out infinite', buddyLegs: 'none', buddyLabel: 'Pattern: steady movement — keep breathing, stay tall' };
+      })()),
+      exImgHas: !!s.exImg, exImgNone: !s.exImg,
+      exImgEl: s.exImg ? (s.exVid
+        ? React.createElement('video', { src: s.exImg, autoPlay: true, loop: true, muted: true, playsInline: true, controls: true, style: { width: '100%', maxHeight: 340, objectFit: 'contain', background: '#000', display: 'block' } })
+        : React.createElement('img', { src: s.exImg, alt: 'Exercise demonstration', style: { width: '100%', maxHeight: 340, objectFit: 'contain', background: '#fff', display: 'block' } })) : null,
+      exImgMsg: s.exImgLoading ? 'SEARCHING THE OPEN EXERCISE DATABASE…' : 'NO DEMONSTRATION IMAGE FOUND FOR THIS MOVEMENT',
+      coachTips: this.props.coachTips ?? true, showMacros: this.props.showMacros ?? true
+    };
+  }
+}
+</script>
+</body>
+</html>

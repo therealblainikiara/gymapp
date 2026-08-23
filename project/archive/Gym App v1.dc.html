@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/industry-0dab36ca-261d-47b1-8bce-360143a38f11/styles.css">
+  <script src="_ds/industry-0dab36ca-261d-47b1-8bce-360143a38f11/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;background:var(--color-bg)}
+    a{color:var(--color-accent)} a:hover{color:var(--color-accent-700)}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+    @keyframes drawIn{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+  </style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column">
+  <div class="nav" style="border-bottom:1px solid var(--color-divider)">
+    <span class="nav-brand" style="display:inline-flex;align-items:center;gap:9px;letter-spacing:0.04em">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="1.5" stroke-linecap="round"><path d="M14.4 14.4 9.6 9.6"></path><path d="M18.657 21.485a2 2 0 1 1-2.829-2.828l-1.767 1.768a2 2 0 1 1-2.829-2.829l6.364-6.364a2 2 0 1 1 2.829 2.829l1.768-1.768a2 2 0 1 1 2.828 2.829z"></path><path d="M21.5 21.5 20 20"></path><path d="M3.9 3.9 2.5 2.5"></path><path d="M6.404 12.768a2 2 0 1 1-2.829-2.829l1.768-1.767a2 2 0 1 1-2.828-2.829l2.828-2.828a2 2 0 1 1 2.829 2.828l1.767-1.768a2 2 0 1 1 2.829 2.829z"></path></svg>
+      GYM APP</span>
+    <span class="tag tag-outline" style="letter-spacing:0.08em">TRAINING PLANNER</span>
+  </div>
+  <div style="padding:34px 28px 6px;max-width:1240px;width:100%;margin:0 auto;box-sizing:border-box">
+    <h1 style="font-size:clamp(36px,5vw,54px);text-transform:uppercase;margin:0;animation:fadeUp .4s both">Pick your goal.<br>Get your plan.</h1>
+    <p class="text-muted" style="max-width:52ch;margin:10px 0 0;animation:fadeUp .4s .08s both">Choose a fitness goal and the muscles you want to work. Gym App drafts a weekly training plan and matching meal ideas on the spot — adjust anything and it redraws instantly.</p>
+    <div style="height:2px;background:var(--color-accent);width:120px;margin:22px 0 0;transform-origin:left;animation:drawIn .5s .15s both"></div>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:26px;align-items:flex-start;padding:26px 28px 48px;max-width:1240px;width:100%;margin:0 auto;box-sizing:border-box">
+    <div class="card blueprint" style="flex:1 1 280px;max-width:400px;gap:18px;padding:20px;animation:fadeUp .4s .1s both">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <span class="card-kicker" style="font-size:11px">Setup</span>
+        <span class="card-meta">FIG. 01</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <h6 style="margin:0 0 2px">Fitness goal</h6>
+        <sc-for list="{{ goalOpts }}" as="g" hint-placeholder-count="5">
+          <button data-id="{{ g.id }}" onClick="{{ setGoal }}" class="btn" style="width:100%;flex-direction:column;align-items:flex-start;gap:1px;padding:9px 12px;background:{{ g.bg }};color:{{ g.fg }};border-color:{{ g.bc }};transition:background .15s,color .15s,border-color .15s">
+            <span style="font-size:15px;letter-spacing:0.02em">{{ g.label }}</span>
+            <span style="font-family:var(--font-body);font-weight:400;font-size:11.5px;opacity:0.72">{{ g.desc }}</span>
+          </button>
+        </sc-for>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <h6 style="margin:0 0 2px">Muscle focus</h6>
+        <div style="display:flex;flex-wrap:wrap;gap:7px">
+          <sc-for list="{{ muscleOpts }}" as="m" hint-placeholder-count="7">
+            <button data-id="{{ m.id }}" onClick="{{ toggleMuscle }}" class="btn" style="padding:4px 11px;font-size:12.5px;background:{{ m.bg }};color:{{ m.fg }};border-color:{{ m.bc }};transition:background .15s,color .15s,border-color .15s">{{ m.label }}</button>
+          </sc-for>
+        </div>
+        <span class="card-meta">Pick none for a full-body plan.</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:16px">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <h6 style="margin:0">Level</h6>
+          <div class="seg">
+            <sc-for list="{{ levelOpts }}" as="o" hint-placeholder-count="3">
+              <label class="seg-opt"><input type="radio" name="level" value="{{ o.id }}" checked="{{ o.active }}" onChange="{{ setLevel }}">{{ o.label }}</label>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <h6 style="margin:0">Days / week</h6>
+          <div class="seg">
+            <sc-for list="{{ dayOpts }}" as="o" hint-placeholder-count="3">
+              <label class="seg-opt"><input type="radio" name="days" value="{{ o.id }}" checked="{{ o.active }}" onChange="{{ setDays }}">{{ o.label }}</label>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <h6 style="margin:0">Diet</h6>
+          <div class="seg">
+            <sc-for list="{{ dietOpts }}" as="o" hint-placeholder-count="2">
+              <label class="seg-opt"><input type="radio" name="diet" value="{{ o.id }}" checked="{{ o.active }}" onChange="{{ setDiet }}">{{ o.label }}</label>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="flex:999 1 340px;display:flex;flex-direction:column;gap:18px;min-width:0">
+      <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between">
+        <div class="seg" style="background:var(--color-bg)">
+          <button data-tab="workout" onClick="{{ setTab }}" class="seg-opt" style="border:0;cursor:pointer;font-family:var(--font-heading);font-weight:600;font-size:14px;letter-spacing:0.05em;padding:8px 18px;background:{{ tabWBg }};color:{{ tabWFg }};transition:background .15s,color .15s">WORKOUT PLAN</button>
+          <button data-tab="diet" onClick="{{ setTab }}" class="seg-opt" style="border:0;border-left:1px solid var(--color-divider);cursor:pointer;font-family:var(--font-heading);font-weight:600;font-size:14px;letter-spacing:0.05em;padding:8px 18px;background:{{ tabDBg }};color:{{ tabDFg }};transition:background .15s,color .15s">MEAL IDEAS</button>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:7px">
+          <span class="tag tag-accent">{{ goalLabel }}</span>
+          <span class="tag tag-neutral">{{ focusLabel }}</span>
+          <span class="tag tag-outline">{{ sessionLabel }}</span>
+        </div>
+      </div>
+      <sc-if value="{{ isWorkout }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div style="display:flex;align-items:baseline;gap:10px">
+            <h3 style="margin:0;text-transform:uppercase">{{ splitName }}</h3>
+            <span class="card-meta">{{ weekLabel }}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:22px">
+            <sc-for list="{{ days }}" as="d" hint-placeholder-count="4">
+              <div class="card blueprint elev-sm" style="gap:10px;padding:16px;animation:fadeUp .4s {{ d.delay }} both">
+                <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                  <span class="card-kicker" style="font-size:11px">{{ d.label }}</span>
+                  <span class="tag tag-neutral">{{ d.focus }}</span>
+                </div>
+                <table class="table" style="font-size:13.5px">
+                  <thead><tr><th>Exercise</th><th style="text-align:right">Sets × reps</th><th style="text-align:right">Rest</th></tr></thead>
+                  <tbody>
+                    <sc-for list="{{ d.exercises }}" as="ex" hint-placeholder-count="5">
+                      <tr><td>{{ ex.name }}</td><td style="text-align:right;white-space:nowrap">{{ ex.scheme }}</td><td style="text-align:right;white-space:nowrap">{{ ex.rest }}</td></tr>
+                    </sc-for>
+                  </tbody>
+                </table>
+                <sc-if value="{{ coachTips }}" hint-placeholder-val="{{ true }}">
+                  <p class="card-meta" style="margin:0">{{ d.tip }}</p>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ isDiet }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div class="card blueprint" style="padding:16px 20px;animation:fadeUp .35s both">
+            <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+            <span class="card-kicker" style="font-size:11px">Daily targets — {{ goalLabel }}</span>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:14px;margin-top:6px">
+              <sc-for list="{{ targets }}" as="t" hint-placeholder-count="4">
+                <div style="display:flex;flex-direction:column;border-left:2px solid var(--color-accent);padding-left:12px">
+                  <span style="font-family:var(--font-heading);font-weight:600;font-size:30px;line-height:1.05">{{ t.value }}</span>
+                  <span class="card-meta" style="text-transform:uppercase;letter-spacing:0.08em">{{ t.label }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:22px">
+            <sc-for list="{{ meals }}" as="meal" hint-placeholder-count="4">
+              <div class="card blueprint elev-sm" style="gap:8px;padding:16px;animation:fadeUp .4s {{ meal.delay }} both">
+                <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                <span class="card-kicker" style="font-size:11px">{{ meal.slot }}</span>
+                <span class="card-title">{{ meal.name }}</span>
+                <p class="card-body" style="flex:1">{{ meal.desc }}</p>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                  <sc-if value="{{ showMacros }}" hint-placeholder-val="{{ true }}">
+                    <div style="display:flex;gap:6px">
+                      <span class="tag tag-neutral">{{ meal.kcal }} kcal</span>
+                      <span class="tag tag-accent">{{ meal.protein }} g protein</span>
+                    </div>
+                  </sc-if>
+                  <button data-slot="{{ meal.id }}" onClick="{{ swapMeal }}" class="btn btn-ghost" style="font-size:12px;padding:3px 8px">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15.3-6.4L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-15.3 6.4L3 16"></path><path d="M3 21v-5h5"></path></svg>
+                    Swap</button>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+  <div style="border-top:1px solid var(--color-divider);padding:14px 28px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap">
+    <span class="card-meta">GYM APP — plans are drafted from your picks; consult a coach before heavy lifting.</span>
+    <span class="card-meta">SHEET 01 / REV A</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;coachTips&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Content&quot;}, &quot;showMacros&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Content&quot;}}">
+class Component extends DCLogic {
+  state = { goal: 'muscle', muscles: ['chest', 'back'], level: 'intermediate', days: 4, diet: 'omni', tab: 'workout', mealIdx: { breakfast: 0, lunch: 0, dinner: 0, snack: 0 } };
+  DB = {
+    chest: { label: 'Chest', ex: ['Barbell bench press', 'Incline dumbbell press', 'Cable fly', 'Weighted push-up', 'Machine chest press'] },
+    back: { label: 'Back', ex: ['Barbell row', 'Lat pulldown', 'Seated cable row', 'Pull-up', 'Single-arm dumbbell row'] },
+    legs: { label: 'Legs', ex: ['Back squat', 'Romanian deadlift', 'Leg press', 'Walking lunge', 'Seated leg curl'] },
+    shoulders: { label: 'Shoulders', ex: ['Overhead press', 'Lateral raise', 'Face pull', 'Arnold press', 'Rear-delt fly'] },
+    arms: { label: 'Arms', ex: ['Barbell curl', 'Triceps pushdown', 'Incline hammer curl', 'Skull crusher', 'Overhead cable extension'] },
+    core: { label: 'Core', ex: ['Hanging leg raise', 'Cable crunch', 'Plank walk-out', 'Pallof press', 'Ab-wheel rollout'] },
+    full: { label: 'Full body', ex: ['Trap-bar deadlift', 'Front squat', 'Push press', 'Chin-up', 'Kettlebell swing'] }
+  };
+  FINISHERS = ['Rowing intervals — 5 × 1 min hard / 1 min easy', 'Kettlebell swings — 3 × 20', 'Sled push — 6 × 20 m', 'Assault bike — 8 × 30 s on / off', 'Farmer\u2019s carry — 4 × 40 m'];
+  GOALS = {
+    muscle: { label: 'Build muscle', desc: 'Hypertrophy — moderate reps, controlled tempo', sets: 4, reps: '8–10', rest: '90 s', restSec: 90, split: 'Hypertrophy split', kcal: 2800, protein: 170, carbs: 320, fat: 80, tips: ['Leave 1–2 reps in the tank on every set.', 'Add a rep or small load every week.', 'Control the lowering phase — 2–3 s down.', 'Ramp up with 2 light warm-up sets first.', 'Rest fully — quality sets beat rushed ones.'] },
+    fat: { label: 'Lose fat', desc: 'Higher reps, short rests, finishers', sets: 3, reps: '12–15', rest: '45 s', restSec: 45, finisher: true, split: 'Circuit split', kcal: 1900, protein: 160, carbs: 170, fat: 60, tips: ['Keep rests honest — a timer helps.', 'Pair the finisher with steady breathing.', 'Walk 8–10k steps on top of sessions.', 'Protein at every meal keeps you full.', 'Push the last set close to failure.'] },
+    strength: { label: 'Strength', desc: 'Heavy compounds, low reps, long rests', sets: 5, reps: '5', rest: '150 s', restSec: 150, split: 'Heavy compound split', kcal: 2900, protein: 165, carbs: 330, fat: 90, tips: ['Brace hard before every heavy rep.', 'Stop a set when bar speed grinds.', 'Log every top set — progress is the plan.', 'Treat rest periods as part of the work.', 'Technique first; load second.'] },
+    endurance: { label: 'Endurance', desc: 'High reps, minimal rest, big engine', sets: 3, reps: '15–20', rest: '30 s', restSec: 30, finisher: true, split: 'Endurance split', kcal: 2600, protein: 130, carbs: 340, fat: 70, tips: ['Move continuously — rest is a slow walk.', 'Nasal breathing on easy portions.', 'Hydrate before, during, after.', 'Keep loads light and form crisp.', 'Finish with 5 min easy cooldown.'] },
+    general: { label: 'General fitness', desc: 'Balanced strength and conditioning', sets: 3, reps: '10–12', rest: '60 s', restSec: 60, split: 'Balanced split', kcal: 2300, protein: 130, carbs: 250, fat: 75, tips: ['Consistency beats intensity — show up.', 'Leave the gym feeling better, not broken.', 'Stretch what you trained for 5 min.', 'Sleep is the best recovery tool you own.', 'Enjoyable training is repeatable training.'] }
+  };
+  MEALS = {
+    breakfast: [
+      { name: 'Protein oats', desc: 'Rolled oats with whey, banana and peanut butter.', kcal: 550, protein: 38, veg: true },
+      { name: 'Greek yogurt bowl', desc: 'Thick yogurt, berries, granola and honey.', kcal: 420, protein: 32, veg: true },
+      { name: 'Smoked salmon bagel', desc: 'Toasted bagel, cream cheese, capers, dill.', kcal: 480, protein: 30, veg: false },
+      { name: 'Eggs on sourdough', desc: 'Three eggs, smashed avocado, chilli flakes.', kcal: 520, protein: 28, veg: true }
+    ],
+    lunch: [
+      { name: 'Chicken burrito bowl', desc: 'Rice, black beans, salsa, corn and lime.', kcal: 650, protein: 45, veg: false },
+      { name: 'Tofu poke bowl', desc: 'Marinated tofu, sushi rice, edamame, mango.', kcal: 580, protein: 30, veg: true },
+      { name: 'Turkey club wrap', desc: 'Turkey, bacon, lettuce, tomato in a wholegrain wrap.', kcal: 560, protein: 40, veg: false },
+      { name: 'Lentil & halloumi salad', desc: 'Warm lentils, grilled halloumi, rocket, lemon.', kcal: 540, protein: 28, veg: true }
+    ],
+    dinner: [
+      { name: 'Steak & sweet potato', desc: 'Sirloin, roast sweet potato and greens.', kcal: 700, protein: 48, veg: false },
+      { name: 'Salmon & quinoa', desc: 'Baked salmon, quinoa, charred broccoli.', kcal: 640, protein: 42, veg: false },
+      { name: 'Paneer tikka & rice', desc: 'Charred paneer, basmati, cucumber raita.', kcal: 620, protein: 32, veg: true },
+      { name: 'Chickpea spinach curry', desc: 'Coconut base, brown rice, coriander.', kcal: 560, protein: 24, veg: true }
+    ],
+    snack: [
+      { name: 'Protein shake & almonds', desc: 'One scoop whey, a handful of almonds.', kcal: 300, protein: 30, veg: true },
+      { name: 'Cottage cheese & pineapple', desc: 'High-protein, post-session friendly.', kcal: 220, protein: 24, veg: true },
+      { name: 'Beef jerky & apple', desc: 'Portable protein plus quick carbs.', kcal: 250, protein: 26, veg: false },
+      { name: 'Hummus & veggie sticks', desc: 'Carrot, cucumber, pepper, lemony hummus.', kcal: 200, protein: 8, veg: true }
+    ]
+  };
+  setGoal = (e) => this.setState({ goal: e.currentTarget.dataset.id });
+  toggleMuscle = (e) => { const id = e.currentTarget.dataset.id; this.setState((s) => ({ muscles: s.muscles.includes(id) ? s.muscles.filter((m) => m !== id) : [...s.muscles, id] })); };
+  setLevel = (e) => this.setState({ level: e.target.value });
+  setDays = (e) => this.setState({ days: +e.target.value });
+  setDiet = (e) => this.setState({ diet: e.target.value });
+  setTab = (e) => this.setState({ tab: e.currentTarget.dataset.tab });
+  swapMeal = (e) => { const slot = e.currentTarget.dataset.slot; this.setState((s) => ({ mealIdx: { ...s.mealIdx, [slot]: (s.mealIdx[slot] || 0) + 1 } })); };
+  renderVals() {
+    const s = this.state, g = this.GOALS[s.goal];
+    const on = { bg: 'var(--color-accent)', fg: 'var(--color-bg)', bc: 'var(--color-accent)' };
+    const off = { bg: 'transparent', fg: 'inherit', bc: 'var(--color-divider)' };
+    const goalOpts = Object.entries(this.GOALS).map(([id, v]) => ({ id, label: v.label, desc: v.desc, ...(id === s.goal ? on : off) }));
+    const muscleOpts = Object.entries(this.DB).map(([id, v]) => ({ id, label: v.label, ...(s.muscles.includes(id) ? on : off) }));
+    const levelOpts = ['beginner', 'intermediate', 'advanced'].map((id) => ({ id, label: id[0].toUpperCase() + id.slice(1, 3), active: s.level === id }));
+    const dayOpts = [3, 4, 5].map((n) => ({ id: String(n), label: String(n), active: s.days === n }));
+    const dietOpts = [{ id: 'omni', label: 'Omnivore' }, { id: 'veg', label: 'Vegetarian' }].map((o) => ({ ...o, active: s.diet === o.id }));
+    let sets = g.sets + (s.level === 'beginner' ? -1 : s.level === 'advanced' ? 1 : 0);
+    sets = Math.max(2, sets);
+    const sel = s.muscles.length ? s.muscles : ['full'];
+    const groups = Array.from({ length: s.days }, () => []);
+    sel.forEach((m, i) => groups[i % s.days].push(m));
+    groups.forEach((grp, i) => { if (!grp.length) grp.push(sel[i % sel.length]); });
+    const days = groups.map((grp, di) => {
+      const per = Math.max(2, Math.round(5 / grp.length));
+      const exercises = [];
+      grp.forEach((m) => {
+        const list = this.DB[m].ex, off2 = (di * 2) % list.length;
+        for (let k = 0; k < per && exercises.length < 6; k++) {
+          exercises.push({ name: list[(off2 + k) % list.length], scheme: sets + ' × ' + g.reps, rest: g.rest });
+        }
+      });
+      if (g.finisher) exercises.push({ name: this.FINISHERS[di % this.FINISHERS.length], scheme: 'Finisher', rest: '—' });
+      return { label: 'Day 0' + (di + 1), focus: grp.map((m) => this.DB[m].label).join(' · '), exercises, tip: g.tips[di % g.tips.length], delay: (di * 0.07).toFixed(2) + 's' };
+    });
+    const d0 = days[0];
+    const mins = Math.round((d0.exercises.filter((e) => e.rest !== '—').length * sets * (40 + g.restSec)) / 60 / 5) * 5 + (g.finisher ? 8 : 0);
+    const slots = ['breakfast', 'lunch', 'dinner', 'snack'];
+    const meals = slots.map((slot, i) => {
+      const opts = this.MEALS[slot].filter((o) => s.diet === 'omni' || o.veg);
+      const pick = opts[(s.mealIdx[slot] || 0) % opts.length];
+      return { id: slot, slot: slot.toUpperCase(), delay: (i * 0.06).toFixed(2) + 's', ...pick };
+    });
+    const kcalAdj = s.diet === 'veg' ? -100 : 0;
+    return {
+      goalOpts, muscleOpts, levelOpts, dayOpts, dietOpts, days,
+      setGoal: this.setGoal, toggleMuscle: this.toggleMuscle, setLevel: this.setLevel, setDays: this.setDays, setDiet: this.setDiet, setTab: this.setTab, swapMeal: this.swapMeal,
+      isWorkout: s.tab === 'workout', isDiet: s.tab === 'diet',
+      tabWBg: s.tab === 'workout' ? 'var(--color-accent)' : 'transparent', tabWFg: s.tab === 'workout' ? 'var(--color-bg)' : 'inherit',
+      tabDBg: s.tab === 'diet' ? 'var(--color-accent)' : 'transparent', tabDFg: s.tab === 'diet' ? 'var(--color-bg)' : 'inherit',
+      goalLabel: g.label, splitName: g.split, weekLabel: s.days + ' sessions / week',
+      focusLabel: sel.map((m) => this.DB[m].label).join(' · '),
+      sessionLabel: '~' + mins + ' min / session',
+      targets: [{ value: g.kcal + kcalAdj, label: 'kcal' }, { value: g.protein + ' g', label: 'protein' }, { value: g.carbs + ' g', label: 'carbs' }, { value: g.fat + ' g', label: 'fat' }],
+      meals,
+      coachTips: this.props.coachTips ?? true,
+      showMacros: this.props.showMacros ?? true
+    };
+  }
+}
+</script>
+</body>
+</html>
