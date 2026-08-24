@@ -10,6 +10,7 @@ import { GOALS } from "@/lib/domain/goals";
 import { scheme } from "@/lib/domain/plan";
 import { clock } from "@/lib/domain/dates";
 import {
+  curatedMedia,
   fetchExerciseMedia,
   isSearchable,
   type ExerciseMedia,
@@ -40,11 +41,13 @@ export default function ExerciseDetail({
     name: string;
     media: ExerciseMedia | null;
   } | null>(null);
-  const media = lookup?.name === exercise.n ? lookup.media : null;
-
-  // C1: bone-loading drills filter on "drop" and "march", which any parade
-  // photograph passes. Skipped rather than searched — see media.ts.
-  const searchable = isSearchable(exercise.n);
+  // A curated illustration wins outright, and is shown whether or not the
+  // movement is searchable — "never query Commons for this" and "we drew it
+  // ourselves" are unrelated facts. C1 skips the bone-loading drills because
+  // they filter on "drop" and "march", which any parade photograph passes.
+  const curated = curatedMedia(exercise.n);
+  const media = curated ?? (lookup?.name === exercise.n ? lookup.media : null);
+  const searchable = !curated && isSearchable(exercise.n);
   const loadingMedia = searchable && lookup?.name !== exercise.n;
 
   const [seconds, setSeconds] = useState(0);
@@ -159,7 +162,9 @@ export default function ExerciseDetail({
             />
           )}
           <figcaption style={{ padding: "6px 10px" }}>
-            Demonstration media — Wikimedia Commons
+            {curated
+              ? "Movement illustration"
+              : "Demonstration media — Wikimedia Commons"}
           </figcaption>
         </figure>
       ) : (

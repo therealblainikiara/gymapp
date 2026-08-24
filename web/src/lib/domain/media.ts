@@ -82,6 +82,33 @@ export const MEDIA_TERMS: Record<string, string | null> = {
   "Supine twist": "supine spinal twist stretch",
 };
 
+/**
+ * C17 — the curated illustration for a movement, if one has been generated.
+ *
+ * `public/movements/<slug>.png`, produced from the prompts in
+ * `docs/C17-IMAGE-PROMPTS.md`. A file here wins over the Commons lookup for
+ * every movement, which is the point: the search is a stopgap and the library
+ * is the answer.
+ *
+ * Existence is not checked — `next build` does not enumerate `public/`, and a
+ * missing file 404s into the same honest empty state a failed lookup produces.
+ * Add the slug to `CURATED` when the file lands.
+ */
+export const CURATED = new Set<string>([
+  // Populated as illustrations are generated and committed. Every entry must
+  // have a matching file in web/public/movements/, which media.test.ts checks.
+]);
+
+export function curatedMedia(name: string): ExerciseMedia | null {
+  const slug = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  return CURATED.has(slug)
+    ? { url: `/movements/${slug}.png`, isVideo: false }
+    : null;
+}
+
 /** Whether this movement is searched at all. */
 export function isSearchable(name: string): boolean {
   return MEDIA_TERMS[name] !== null;
@@ -183,6 +210,11 @@ export async function fetchExerciseMedia(
   name: string,
   signal?: AbortSignal,
 ): Promise<ExerciseMedia | null> {
+  // A curated illustration always wins: it is on-brand, it is guaranteed to
+  // show the right movement, and it cannot be a photograph of a stranger.
+  const curated = curatedMedia(name);
+  if (curated) return curated;
+
   const base = mediaBase(name);
   if (base === null) return null;
   for (const term of searchTermsFor(name)) {

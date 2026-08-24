@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  CURATED,
   MEDIA_TERMS,
+  curatedMedia,
   isSearchable,
   mediaBase,
   pickMedia,
@@ -12,6 +14,7 @@ import {
   BONE_LOADING,
   EXERCISE_DB,
   MUSCLE_KEYS,
+  exerciseSlug,
 } from "./exercises";
 import { RECOVERY_LIBRARY } from "./recovery";
 
@@ -252,6 +255,69 @@ describe("C1 — every movement that can be searched, is accounted for", () => {
         ),
         title,
       ).toBeNull();
+    }
+  });
+});
+
+describe("C17 — curated illustrations win over search", () => {
+  it("resolves a curated slug to a local path, not a remote URL", () => {
+    // Proven against a temporary entry rather than a real one, so the test
+    // holds before any illustration has been generated and after all 53 are.
+    CURATED.add("test-movement");
+    try {
+      expect(curatedMedia("Test movement")).toEqual({
+        url: "/movements/test-movement.png",
+        isVideo: false,
+      });
+    } finally {
+      CURATED.delete("test-movement");
+    }
+  });
+
+  it("returns nothing for a movement with no illustration", () => {
+    expect(curatedMedia("Goblet squat")).toBeNull();
+  });
+
+  it("slugs the same way the detail routes do", () => {
+    // The file name and the URL slug must agree, or the illustration lands at
+    // a path the page never asks for.
+    CURATED.add(exerciseSlug("World's greatest stretch"));
+    try {
+      expect(curatedMedia("World's greatest stretch")?.url).toBe(
+        `/movements/${exerciseSlug("World's greatest stretch")}.png`,
+      );
+    } finally {
+      CURATED.delete(exerciseSlug("World's greatest stretch"));
+    }
+  });
+
+  it("names a file for every movement, with no collisions", () => {
+    // What the prompt set will produce. Two movements slugging to one file
+    // would silently give them the same picture.
+    const all = [
+      ...MUSCLE_KEYS.flatMap((k) => EXERCISE_DB[k].ex.map((e) => e.n)),
+      ...BONE_LOADING.map((e) => e.n),
+      ...RECOVERY_LIBRARY.map((m) => m.n),
+    ];
+    const slugs = all.map(exerciseSlug);
+    expect(new Set(slugs).size, "two movements share a file name").toBe(
+      slugs.length,
+    );
+    for (const s of slugs) expect(s, "empty slug").toBeTruthy();
+  });
+
+  it("every curated entry is a slug of a real movement", () => {
+    const known = new Set(
+      [
+        ...MUSCLE_KEYS.flatMap((k) => EXERCISE_DB[k].ex.map((e) => e.n)),
+        ...BONE_LOADING.map((e) => e.n),
+        ...RECOVERY_LIBRARY.map((m) => m.n),
+      ].map(exerciseSlug),
+    );
+    for (const s of CURATED) {
+      expect(known.has(s), `CURATED has "${s}", which is not a movement`).toBe(
+        true,
+      );
     }
   });
 });

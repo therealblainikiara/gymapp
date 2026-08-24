@@ -338,7 +338,16 @@ movement, and counted on Progress when they finish it.
 ### M5 — Buddy + media
 - **C16** Rigged three.js buddy. **Scope grows with M7** — it must now cover
   recovery movement patterns too, per goal 5.
-- **C17** Licensed or shot demo video.
+- **C17** *(prompts ready, art outstanding)* Decided in favour of generated
+  line illustrations over licensed photography. `docs/C17-IMAGE-PROMPTS.md`
+  holds one prompt per movement — 53 of them, all sharing a style block taken
+  from the Industry design system's own description of itself, so they read as
+  a set. `assets/movement-poses.json` holds the pose per movement and
+  `scripts/image-prompts.mjs` composes them; the generator refuses to run when
+  the two disagree, so a movement cannot ship without a description.
+  `curatedMedia()` resolves `web/public/movements/<slug>.png` ahead of the
+  Commons lookup. *Remaining: generate the 53 images and add their slugs to
+  `CURATED`.*
 - **C18** On-device pose model; reps and HR are simulated at a fixed cadence
   today, disclosed in the UI.
 

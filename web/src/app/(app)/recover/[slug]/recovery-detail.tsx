@@ -9,6 +9,7 @@ import { useProfile, useStore } from "@/lib/local/provider";
 import { clock } from "@/lib/domain/dates";
 import { exerciseSlug, injuryLabel } from "@/lib/domain/exercises";
 import {
+  curatedMedia,
   fetchExerciseMedia,
   isSearchable,
   type ExerciseMedia,
@@ -96,7 +97,11 @@ export default function RecoveryDetail({
     name: string;
     media: ExerciseMedia | null;
   } | null>(null);
-  const media = lookup?.name === move.n ? lookup.media : null;
+  // A curated illustration is shown whether or not the movement is searchable.
+  // Drainage and breath movements are never searched and are exactly the ones
+  // an illustration finally covers.
+  const curated = curatedMedia(move.n);
+  const media = curated ?? (lookup?.name === move.n ? lookup.media : null);
 
   // Two reasons a movement is never searched, and both live in `media.ts` now
   // rather than here. By kind: drainage and breath names are body-part words —
@@ -105,6 +110,7 @@ export default function RecoveryDetail({
   // discriminating word is short enough that the relevance filter drops it,
   // leaving an animal or a person as the only thing it checks for.
   const searchable =
+    !curated &&
     move.kind !== "drainage" &&
     move.kind !== "breath" &&
     isSearchable(move.n);
@@ -272,7 +278,9 @@ export default function RecoveryDetail({
             />
           )}
           <figcaption style={{ padding: "6px 10px" }}>
-            Demonstration media — Wikimedia Commons
+            {curated
+              ? "Movement illustration"
+              : "Demonstration media — Wikimedia Commons"}
           </figcaption>
         </figure>
       ) : (
