@@ -40,14 +40,17 @@ export function Blueprint({
 export function Card({
   className = "",
   style,
+  role,
   children,
 }: {
   className?: string;
   style?: CSSProperties;
+  /** For the rare card that is an announcement rather than content. */
+  role?: string;
   children: ReactNode;
 }) {
   return (
-    <div className={`card blueprint ${className}`.trim()} style={style}>
+    <div className={`card blueprint ${className}`.trim()} style={style} role={role}>
       <Corners />
       {children}
     </div>

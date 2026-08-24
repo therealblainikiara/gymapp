@@ -1,3 +1,4 @@
+import type { MovementFlag } from "./exercises";
 import type {
   BoneHealth,
   ConditionKey,
@@ -5,6 +6,16 @@ import type {
   PelvicFloor,
   ProfileRow,
 } from "@/lib/types/database";
+
+/** Everything the user has told us about their health, in one shape. */
+export type Declarations = Pick<
+  ProfileRow,
+  | "menopause_stage"
+  | "bone_health"
+  | "pelvic_floor"
+  | "conditions"
+  | "clinician_cleared_at"
+>;
 
 /**
  * M6 / C19 — the health declarations that shape a plan.
@@ -128,10 +139,7 @@ export function offersHealthStep({ sex, age }: QuestionAudience) {
  * declarations of a condition — they do not require clearance.
  */
 export function declaresProgrammingCondition(
-  p: Pick<
-    ProfileRow,
-    "menopause_stage" | "bone_health" | "pelvic_floor" | "conditions"
-  >,
+  p: Omit<Declarations, "clinician_cleared_at">,
 ): boolean {
   return (
     p.conditions.length > 0 ||
@@ -149,17 +157,58 @@ export function declaresProgrammingCondition(
  * declared AND a clinician has been confirmed. A self-reported diagnosis is
  * enough to ask about, not enough to program on.
  */
-export function conditionProgrammingActive(
-  p: Pick<
-    ProfileRow,
-    | "menopause_stage"
-    | "bone_health"
-    | "pelvic_floor"
-    | "conditions"
-    | "clinician_cleared_at"
-  >,
-): boolean {
+export function conditionProgrammingActive(p: Declarations): boolean {
   return declaresProgrammingCondition(p) && !!p.clinician_cleared_at;
+}
+
+/**
+ * M6 / C20 — movement mechanics that must not appear in the plan at all,
+ * given what the user has declared.
+ *
+ * **These removals are deliberately not behind the clinician gate.** The gate
+ * governs what the plan *adds*: prescribing a bone-loading impact block is
+ * programming, and programming needs a clinician. Declining to prescribe a
+ * loaded toe-touch to someone who has told us they have osteoporosis is not
+ * programming — it is the absence of it — and making them tick a box first
+ * would have the gate protecting us at their expense.
+ *
+ * Osteopenia is not here on purpose. It is a lower-risk finding where the
+ * evidence favours loading the spine carefully over avoiding it, so C21 treats
+ * it as an adjustment rather than a removal.
+ */
+export function removedMovementFlags(
+  d: Pick<Declarations, "bone_health">,
+): MovementFlag[] {
+  // Vertebral fracture in osteoporosis is overwhelmingly a flexion injury, and
+  // it happens at loads people do not think of as heavy.
+  return d.bone_health === "osteoporosis"
+    ? ["spinal_flexion", "spinal_rotation"]
+    : [];
+}
+
+/**
+ * Why a movement is missing from the plan, phrased for the user — or null if
+ * it is not missing.
+ *
+ * The plan itself simply omits these, which is invisible. The exercise detail
+ * page stays reachable by link and by search, so it is the one place someone
+ * meets a movement we decided against, and "removed for your safety" with no
+ * reason attached is exactly the sort of thing people route around.
+ */
+export function movementRemovalReason(
+  flags: MovementFlag[],
+  d: Pick<Declarations, "bone_health">,
+): string | null {
+  const hit = removedMovementFlags(d).filter((f) => flags.includes(f));
+  if (!hit.length) return null;
+  const mechanic = hit.includes("spinal_flexion")
+    ? "bends the spine forward"
+    : "twists the spine to end range";
+  return (
+    `Not in your plan. You told us you have osteoporosis, and this movement ` +
+    `${mechanic} — the pattern most associated with vertebral fracture. ` +
+    `Ask your clinician before you add it back.`
+  );
 }
 
 // ── Validators, mirroring the CHECK constraints ─────────────────────────────

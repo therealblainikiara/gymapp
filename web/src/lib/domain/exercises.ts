@@ -10,7 +10,49 @@ import type { InjuryKey, MuscleKey } from "@/lib/types/database";
  *   c  — form cues
  *   s  — over-40 joint-safety note
  *   e/h — easier / harder variation
+ *   contra — M6: the mechanics this movement puts the body through
  */
+
+/**
+ * M6 / C20 — what a movement *does*, not who should avoid it.
+ *
+ * Tagging by mechanism rather than by condition is what lets later age bands
+ * add data instead of code: `overhead` is one fact about a press, and the
+ * frozen-shoulder rule, the blood-pressure rule and anything added later all
+ * read the same tag. A `contra: ["osteoporosis"]` scheme would need every
+ * exercise re-tagged the first time a second condition cared about the same
+ * mechanic.
+ *
+ * Which flags actually remove a movement lives in `conditions.ts`; C20 removes
+ * on spinal flexion and rotation only. The rest are tagged now so that C21's
+ * rules are rules and nothing else.
+ */
+export type MovementFlag =
+  /** Loaded forward bending — hinges to end range, toe-touches. */
+  | "spinal_flexion"
+  /** End-range twisting of the trunk under load. */
+  | "spinal_rotation"
+  /** Both feet leave the floor, or a landing is absorbed. */
+  | "impact"
+  /** Load finishes above the shoulder. */
+  | "overhead"
+  /** Front knee travels past roughly parallel. */
+  | "deep_knee_flexion"
+  /** Braced effort that spikes intra-abdominal pressure. */
+  | "valsalva"
+  /** A sustained hold rather than reps. */
+  | "isometric_hold";
+
+export const MOVEMENT_FLAGS: MovementFlag[] = [
+  "spinal_flexion",
+  "spinal_rotation",
+  "impact",
+  "overhead",
+  "deep_knee_flexion",
+  "valsalva",
+  "isometric_hold",
+];
+
 export interface Exercise {
   n: string;
   k: "bw" | "db";
@@ -19,6 +61,8 @@ export interface Exercise {
   s: string;
   e: string;
   h: string;
+  /** Absent means "nothing worth flagging", which is most of the library. */
+  contra?: MovementFlag[];
 }
 
 export interface MuscleGroup {
@@ -104,6 +148,8 @@ export const EXERCISE_DB: Record<MuscleKey, MuscleGroup> = {
         n: "Bent-over dumbbell row",
         k: "db",
         av: ["back"],
+        // Loaded forward bending, even at the shallow hinge the cue asks for.
+        contra: ["spinal_flexion"],
         c: [
           "Hinge, don’t bow — hips back",
           "Chest proud, neck neutral",
@@ -117,6 +163,9 @@ export const EXERCISE_DB: Record<MuscleKey, MuscleGroup> = {
         n: "Superman hold",
         k: "bw",
         av: ["back"],
+        // Extension, not flexion — deliberately NOT flagged for bone health.
+        // Prone extension work is recommended in osteoporosis, not avoided.
+        contra: ["isometric_hold"],
         c: [
           "Lift chest and thighs a few cm",
           "Reach long, don’t crane the neck",
@@ -148,6 +197,7 @@ export const EXERCISE_DB: Record<MuscleKey, MuscleGroup> = {
         n: "Goblet squat",
         k: "db",
         av: ["knee"],
+        contra: ["deep_knee_flexion", "valsalva"],
         c: [
           "Bell tight to the chest",
           "Sit between the heels",
@@ -161,6 +211,10 @@ export const EXERCISE_DB: Record<MuscleKey, MuscleGroup> = {
         n: "Dumbbell Romanian deadlift",
         k: "db",
         av: ["back"],
+        // A loaded hinge to hamstring length. With a coach watching the spine
+        // it stays neutral; unsupervised it is the classic way a fragile
+        // vertebra gets compressed, which is exactly our situation.
+        contra: ["spinal_flexion", "valsalva"],
         c: [
           "Hips back, soft knees",
           "Bells slide down the thighs",
@@ -174,6 +228,7 @@ export const EXERCISE_DB: Record<MuscleKey, MuscleGroup> = {
         n: "Split squat",
         k: "bw",
         av: ["knee"],
+        contra: ["deep_knee_flexion"],
         c: [
           "Long stance, torso tall",
           "Back knee drops straight down",
@@ -205,6 +260,7 @@ export const EXERCISE_DB: Record<MuscleKey, MuscleGroup> = {
         n: "Seated dumbbell press",
         k: "db",
         av: ["shoulder"],
+        contra: ["overhead", "valsalva"],
         c: [
           "Forearms vertical the whole rep",
           "Press up and slightly in",
@@ -231,6 +287,7 @@ export const EXERCISE_DB: Record<MuscleKey, MuscleGroup> = {
         n: "Pike push-up",
         k: "bw",
         av: ["shoulder", "wrist"],
+        contra: ["overhead"],
         c: [
           "Hips high, make an A-shape",
           "Head travels toward the floor",
@@ -271,6 +328,7 @@ export const EXERCISE_DB: Record<MuscleKey, MuscleGroup> = {
         n: "Overhead triceps extension",
         k: "db",
         av: ["shoulder"],
+        contra: ["overhead"],
         c: [
           "Both hands on one bell",
           "Elbows point forward, stay narrow",
@@ -328,6 +386,7 @@ export const EXERCISE_DB: Record<MuscleKey, MuscleGroup> = {
         n: "Side plank",
         k: "bw",
         av: ["shoulder"],
+        contra: ["isometric_hold"],
         c: [
           "One straight line, hips high",
           "Elbow under the shoulder",
@@ -354,6 +413,9 @@ export const EXERCISE_DB: Record<MuscleKey, MuscleGroup> = {
         n: "Suitcase carry",
         k: "db",
         av: [],
+        // Spine stays tall, so no flexion flag — but a heavy carry is a long
+        // braced effort, which is what the pelvic-floor and BP rules read.
+        contra: ["valsalva"],
         c: [
           "One heavy bell, one side",
           "Walk tall — no lean",
@@ -372,6 +434,7 @@ export const EXERCISE_DB: Record<MuscleKey, MuscleGroup> = {
         n: "Dumbbell thruster",
         k: "db",
         av: ["shoulder", "knee"],
+        contra: ["overhead", "deep_knee_flexion", "valsalva"],
         c: [
           "Squat, then drive into the press",
           "One fluid motion",
@@ -411,6 +474,8 @@ export const EXERCISE_DB: Record<MuscleKey, MuscleGroup> = {
         n: "Inchworm walk-out",
         k: "bw",
         av: ["wrist"],
+        // The fold is a toe-touch: unloaded, but end-range spinal flexion.
+        contra: ["spinal_flexion"],
         c: [
           "Walk hands out to a plank",
           "Soft knees on the fold",
@@ -425,6 +490,28 @@ export const EXERCISE_DB: Record<MuscleKey, MuscleGroup> = {
 };
 
 export const MUSCLE_KEYS = Object.keys(EXERCISE_DB) as MuscleKey[];
+
+export const ALL_EXERCISES: Exercise[] = MUSCLE_KEYS.flatMap(
+  (k) => EXERCISE_DB[k].ex,
+);
+
+export function movementFlags(ex: Exercise): MovementFlag[] {
+  return ex.contra ?? [];
+}
+
+/**
+ * The movement the plan falls back to when every filter has fired and a day
+ * would otherwise render empty.
+ *
+ * Derived rather than named, so that tagging a new contraindication can never
+ * quietly turn the last resort itself into an unsafe prescription. The library
+ * test asserts one exists, so the `??` is a type guard rather than a real
+ * fallback.
+ */
+export const ALWAYS_SAFE: Exercise =
+  ALL_EXERCISES.find(
+    (x) => x.k === "bw" && x.av.length === 0 && movementFlags(x).length === 0,
+  ) ?? EXERCISE_DB.core.ex[0];
 
 export const INJURIES: ReadonlyArray<readonly [InjuryKey, string]> = [
   ["knee", "Knee"],

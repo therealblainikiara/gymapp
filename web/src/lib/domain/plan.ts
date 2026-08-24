@@ -1,4 +1,11 @@
-import { EXERCISE_DB, MUSCLE_KEYS, type Exercise } from "./exercises";
+import {
+  ALWAYS_SAFE,
+  EXERCISE_DB,
+  MUSCLE_KEYS,
+  movementFlags,
+  type Exercise,
+} from "./exercises";
+import { removedMovementFlags, type Declarations } from "./conditions";
 import { FINISHERS, GOALS } from "./goals";
 import { DAY_NAMES } from "./dates";
 import type {
@@ -17,12 +24,13 @@ import type {
  * muscle groups across available days, the `(di * 2) % list.length` rotation
  * that stops every day opening with the same movement — is reproduced exactly.
  *
- * Injury filtering is the part that matters most: an exercise whose `av` list
- * contains a flagged joint is removed from the pool entirely, and a group left
- * with nothing falls back to core work rather than to an unsafe substitute.
+ * Filtering is the part that matters most: an exercise whose `av` list contains
+ * a flagged joint — or whose mechanics a health declaration rules out — is
+ * removed from the pool entirely, and a group left with nothing falls back to
+ * core work rather than to an unsafe substitute.
  */
 
-export interface PlanSettings {
+export interface PlanSettings extends Declarations {
   goal: Goal;
   muscles: MuscleKey[];
   level: Level;
@@ -61,12 +69,17 @@ export function scheme(goal: Goal, level: Level): string {
   return `${setsForLevel(goal, level)} × ${GOALS[goal].reps}`;
 }
 
-/** Drop anything the user lacks equipment for or that loads a flagged joint. */
+/**
+ * Drop anything the user lacks equipment for, that loads a flagged joint, or
+ * whose mechanics a health declaration rules out. One filter, three inputs.
+ */
 function safe(list: Exercise[], settings: PlanSettings): Exercise[] {
+  const removed = removedMovementFlags(settings);
   return list.filter(
     (x) =>
       (settings.kit === "dbbw" || x.k === "bw") &&
-      !x.av.some((j) => settings.injuries.includes(j)),
+      !x.av.some((j) => settings.injuries.includes(j)) &&
+      !movementFlags(x).some((f) => removed.includes(f)),
   );
 }
 
@@ -78,9 +91,10 @@ export function buildPlan(settings: PlanSettings): PlanDay[] {
   for (const k of MUSCLE_KEYS) {
     let p = safe(EXERCISE_DB[k].ex, settings);
     if (!p.length) p = safe(EXERCISE_DB.core.ex, settings);
-    // Last resort: an empty card teaches the user nothing, so keep one core
-    // movement even when every filter has fired.
-    if (!p.length) p = [EXERCISE_DB.core.ex[0]];
+    // Last resort: an empty card teaches the user nothing, so keep one
+    // movement even when every filter has fired. `ALWAYS_SAFE` is derived from
+    // the library rather than named, so it cannot drift into being unsafe.
+    if (!p.length) p = [ALWAYS_SAFE];
     pool[k] = p;
   }
 

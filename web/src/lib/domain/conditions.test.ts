@@ -9,6 +9,8 @@ import {
   offersHealthStep,
   offersMenopauseQuestion,
   offersPelvicFloorQuestion,
+  movementRemovalReason,
+  removedMovementFlags,
 } from "./conditions";
 
 import type { ConditionKey, ProfileRow } from "@/lib/types/database";
@@ -107,6 +109,65 @@ describe("the clinician gate", () => {
       conditionProgrammingActive({
         ...nothing,
         clinician_cleared_at: "2026-08-23T10:00:00Z",
+      }),
+    ).toBe(false);
+  });
+});
+
+describe("movement removals", () => {
+  it("removes spinal flexion and rotation for osteoporosis", () => {
+    expect(removedMovementFlags({ bone_health: "osteoporosis" })).toEqual([
+      "spinal_flexion",
+      "spinal_rotation",
+    ]);
+  });
+
+  it("removes nothing for anything else", () => {
+    for (const bone_health of ["none", "osteopenia", "untested", null] as const) {
+      expect(removedMovementFlags({ bone_health })).toEqual([]);
+    }
+  });
+
+  it("explains a withheld movement by naming the declaration", () => {
+    const reason = movementRemovalReason(["spinal_flexion"], {
+      bone_health: "osteoporosis",
+    });
+    expect(reason).toContain("osteoporosis");
+    expect(reason).toContain("bends the spine forward");
+    expect(reason).toContain("clinician");
+  });
+
+  it("explains rotation separately from flexion", () => {
+    expect(
+      movementRemovalReason(["spinal_rotation"], {
+        bone_health: "osteoporosis",
+      }),
+    ).toContain("twists the spine");
+  });
+
+  it("says nothing about a movement that was never withheld", () => {
+    expect(
+      movementRemovalReason(["overhead", "valsalva"], {
+        bone_health: "osteoporosis",
+      }),
+    ).toBeNull();
+    expect(
+      movementRemovalReason(["spinal_flexion"], { bone_health: "osteopenia" }),
+    ).toBeNull();
+    expect(movementRemovalReason([], { bone_health: null })).toBeNull();
+  });
+
+  it("does not wait for clinician clearance", () => {
+    // Deliberate asymmetry with `conditionProgrammingActive`: the gate governs
+    // what the plan adds, never what it withholds.
+    expect(removedMovementFlags({ bone_health: "osteoporosis" })).toHaveLength(
+      2,
+    );
+    expect(
+      conditionProgrammingActive({
+        ...nothing,
+        bone_health: "osteoporosis",
+        clinician_cleared_at: null,
       }),
     ).toBe(false);
   });

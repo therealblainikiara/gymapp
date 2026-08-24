@@ -28,12 +28,12 @@ Until the box is ticked the user gets the standard over-40s plan plus a prompt.
 
 ## Chunks
 
-### C19 — Profile fields and intake *(schema done, UI to build)*
+### C19 — Profile fields and intake *(done)*
 
-`supabase/migrations/20260823190000_condition_profile.sql` — written, verified
-against Postgres, **not yet applied to the hosted project**. It is purely
-additive: every column is nullable with no default, so existing rows stay valid
-and "not asked" stays distinguishable from an answered "none".
+`supabase/migrations/20260823190000_condition_profile.sql` — applied to the
+hosted project as `gymapp_condition_profile`. It is purely additive: every
+column is nullable with no default, so existing rows stay valid and "not asked"
+stays distinguishable from an answered "none".
 
 | Table | Added |
 |---|---|
@@ -48,20 +48,55 @@ outbox stalls behind a rejected write, so this is not optional.
 *Accept:* a user can declare and later change every field; values round-trip
 through the outbox; RLS suite still passes.
 
-### C20 — Exercise contraindication metadata
+### C20 — Exercise contraindication metadata *(done)*
 
-Add `contra?: ConditionFlag[]` to each entry in `lib/domain/exercises.ts` — a
-static TS library, so no migration. Tag loaded spinal flexion and end-range
-rotation (`Superman hold`, and any crunch/sit-up/twist added later) with
-`osteoporosis`.
+`contra?: MovementFlag[]` on each entry in `lib/domain/exercises.ts` — a static
+TS library, so no migration. `safe()` in `plan.ts` now drops flagged movements
+the same way it drops injury-loading ones: one filter, three inputs (kit,
+injuries, declarations).
 
-Extend the existing `safe()` filter in `plan.ts` to drop contraindicated
-movements the same way it already drops injury-loading ones. One filter, two
-inputs.
+**Two deliberate changes from the plan as drafted.**
 
-*Accept:* with `bone_health = osteoporosis`, no plan in any goal × kit × length
-× focus combination contains a tagged movement — asserted the same exhaustive
-way the injury tests already are.
+*Tag by mechanism, not by condition.* The draft said `contra: ["osteoporosis"]`.
+Tagging what a movement *does* — `spinal_flexion`, `overhead`, `impact`,
+`deep_knee_flexion`, `valsalva`, `isometric_hold`, `spinal_rotation` — means the
+frozen-shoulder rule, the BP rule and anything a later age band adds all read
+the same tag instead of re-tagging the library each time. C20 removes on spinal
+flexion and rotation only; the rest are tagged now so C21 is rules and nothing
+else. `impact` currently tags nothing, because nothing in the library is impact
+— C21's bone-loading block is what will carry it.
+
+*`Superman hold` is not flagged for bone health.* The draft named it as the
+example, which was wrong: it is prone **extension**, and extension work is
+recommended in osteoporosis rather than avoided. Flexion is the fracture
+mechanism. The movements actually flagged are `Bent-over dumbbell row`,
+`Dumbbell Romanian deadlift` and `Inchworm walk-out`.
+
+**Removals are not behind the clinician gate.** Rule 2 governs what the plan
+*adds* — a bone-loading block is programming and needs a clinician. Withholding
+a loaded toe-touch from someone who has told us they have osteoporosis is the
+absence of programming, and gating it would protect us at their expense.
+`removedMovementFlags()` therefore reads `bone_health` alone;
+`conditionProgrammingActive()` keeps the gate for everything C21 adds.
+
+Osteopenia removes nothing on purpose — the evidence favours loading that spine
+carefully over avoiding it, so C21 treats it as an adjustment.
+
+Two supporting pieces the draft did not call for but the filter needs:
+`ALWAYS_SAFE`, the last-resort movement, is now *derived* from the library
+(first bodyweight entry with no `av` and no flags) rather than hard-coded to
+`core.ex[0]`, because that path bypasses `safe()` and would otherwise start
+handing out an unsafe movement the day someone tags dead bug. And
+`movementRemovalReason()` puts a "withheld, and here is why" card on the
+exercise detail page — the plan silently omits these, but the detail page stays
+reachable by link, and an unexplained omission is what people route around.
+
+*Accept:* met. `plan.test.ts` sweeps all 5 goals × 2 kits × 5 lengths × 9 focus
+sets and asserts no flagged movement survives; a companion test asserts the
+sweep is not vacuous (each flagged movement *does* appear with no declaration),
+one asserts the filter fires without clearance, and one asserts it fires only on
+osteoporosis. Verified by mutation: blanking `removedMovementFlags` fails 2
+tests.
 
 ### C21 — Plan generator rules
 

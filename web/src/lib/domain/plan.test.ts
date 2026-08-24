@@ -1,7 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { buildPlan, setsForLevel, todaysPlan, type PlanSettings } from "./plan";
-import { EXERCISE_DB, findExercise, MUSCLE_KEYS } from "./exercises";
-import type { InjuryKey } from "@/lib/types/database";
+import {
+  ALL_EXERCISES,
+  ALWAYS_SAFE,
+  EXERCISE_DB,
+  findExercise,
+  MOVEMENT_FLAGS,
+  movementFlags,
+  MUSCLE_KEYS,
+} from "./exercises";
+import { removedMovementFlags } from "./conditions";
+import { GOALS } from "./goals";
+import type { BoneHealth, Goal, InjuryKey } from "@/lib/types/database";
 
 const base: PlanSettings = {
   goal: "general",
@@ -11,6 +21,11 @@ const base: PlanSettings = {
   session_len: 30,
   avail_days: [1, 3, 5],
   injuries: [],
+  menopause_stage: null,
+  bone_health: null,
+  pelvic_floor: null,
+  conditions: [],
+  clinician_cleared_at: null,
 };
 
 function namesIn(settings: PlanSettings): string[] {
@@ -121,6 +136,110 @@ describe("injury filtering", () => {
   });
 });
 
+describe("osteoporosis contraindications", () => {
+  // The only rule in M6 that *removes* rather than adjusts, so it is the only
+  // one where a bug is a safety issue rather than a quality one. Hence the
+  // exhaustive sweep rather than a sample.
+  const GOAL_KEYS = Object.keys(GOALS) as Goal[];
+  const FOCUSES: PlanSettings["muscles"][] = [
+    [],
+    MUSCLE_KEYS,
+    ...MUSCLE_KEYS.map((m) => [m]),
+  ];
+
+  function sweep(patch: Partial<PlanSettings>): string[] {
+    const names: string[] = [];
+    for (const goal of GOAL_KEYS) {
+      for (const kit of ["bw", "dbbw"] as const) {
+        for (const session_len of [10, 20, 30, 45, 60] as const) {
+          for (const muscles of FOCUSES) {
+            names.push(
+              ...namesIn({ ...base, goal, kit, session_len, muscles, ...patch }),
+            );
+          }
+        }
+      }
+    }
+    return names;
+  }
+
+  const banned: ReturnType<typeof movementFlags> = [
+    "spinal_flexion",
+    "spinal_rotation",
+  ];
+
+  it("never prescribes spinal flexion or rotation, in any combination", () => {
+    for (const name of sweep({ bone_health: "osteoporosis" })) {
+      const flags = movementFlags(findExercise(name)!);
+      expect(flags, `${name} was prescribed`).not.toContain("spinal_flexion");
+      expect(flags, `${name} was prescribed`).not.toContain("spinal_rotation");
+    }
+  });
+
+  it("is not a vacuous test — those movements do get prescribed otherwise", () => {
+    // If the tagged movements never appeared anyway, the sweep above would
+    // pass with the filter deleted.
+    const withoutDeclaration = new Set(sweep({}));
+    const tagged = ALL_EXERCISES.filter((x) =>
+      movementFlags(x).some((f) => banned.includes(f)),
+    );
+    expect(tagged.length).toBeGreaterThan(0);
+    for (const ex of tagged) {
+      expect(withoutDeclaration, `${ex.n} never appears`).toContain(ex.n);
+    }
+  });
+
+  it("fires on the declaration alone, with no clinician clearance", () => {
+    // Removals are not behind the gate: refusing to withhold a dangerous
+    // movement until a box is ticked would protect us, not the user.
+    const names = namesIn({
+      ...base,
+      muscles: MUSCLE_KEYS,
+      bone_health: "osteoporosis",
+      clinician_cleared_at: null,
+    });
+    for (const name of names) {
+      expect(movementFlags(findExercise(name)!)).not.toContain("spinal_flexion");
+    }
+  });
+
+  it("fires only on osteoporosis", () => {
+    for (const bone_health of [
+      "none",
+      "osteopenia",
+      "untested",
+      null,
+    ] as (BoneHealth | null)[]) {
+      const names = new Set(sweep({ bone_health }));
+      expect(
+        [...names].some((n) =>
+          movementFlags(findExercise(n)!).includes("spinal_flexion"),
+        ),
+        `bone_health=${bone_health} should not filter`,
+      ).toBe(true);
+    }
+  });
+
+  it("still returns a usable plan with osteoporosis and every injury flagged", () => {
+    const days = buildPlan({
+      ...base,
+      kit: "bw",
+      muscles: MUSCLE_KEYS,
+      injuries: ["knee", "shoulder", "back", "wrist"],
+      bone_health: "osteoporosis",
+    });
+    for (const day of days) {
+      expect(day.exercises.length).toBeGreaterThan(0);
+    }
+    for (const name of days.flatMap((d) => d.exercises).map((e) => e.name)) {
+      const ex = findExercise(name);
+      if (!ex) continue; // finishers are not library movements
+      expect(ex.av).toEqual([]);
+      expect(movementFlags(ex)).not.toContain("spinal_flexion");
+    }
+  });
+});
+
 describe("today's session", () => {
   const settings = { ...base, avail_days: [1, 3, 5] };
   const days = buildPlan(settings);
@@ -152,6 +271,37 @@ describe("exercise library", () => {
         expect(ex.e, `${ex.n} easier variation`).toBeTruthy();
         expect(ex.h, `${ex.n} harder variation`).toBeTruthy();
       }
+    }
+  });
+
+  it("uses only known movement flags, with no duplicates", () => {
+    for (const ex of ALL_EXERCISES) {
+      const flags = movementFlags(ex);
+      for (const f of flags) {
+        expect(MOVEMENT_FLAGS, `${ex.n} has an unknown flag`).toContain(f);
+      }
+      expect(new Set(flags).size, `${ex.n} repeats a flag`).toBe(flags.length);
+    }
+  });
+
+  it("has a last-resort movement that carries no flags at all", () => {
+    // `buildPlan` prescribes ALWAYS_SAFE when every filter has emptied a
+    // group, so it bypasses `safe()`. If tagging ever leaves the library with
+    // nothing clean, that bypass would start handing out an unsafe movement.
+    expect(ALWAYS_SAFE.k).toBe("bw");
+    expect(ALWAYS_SAFE.av).toEqual([]);
+    expect(movementFlags(ALWAYS_SAFE)).toEqual([]);
+  });
+
+  it("leaves each muscle group something to prescribe under osteoporosis", () => {
+    // Not required for correctness — the fallback covers it — but a group that
+    // filters to nothing means the plan quietly stops being about that group.
+    const banned = removedMovementFlags({ bone_health: "osteoporosis" });
+    for (const key of MUSCLE_KEYS) {
+      const left = EXERCISE_DB[key].ex.filter(
+        (x) => !movementFlags(x).some((f) => banned.includes(f)),
+      );
+      expect(left.length, `${key} filters empty`).toBeGreaterThan(0);
     }
   });
 });

@@ -10,7 +10,8 @@ import { GOALS } from "@/lib/domain/goals";
 import { scheme } from "@/lib/domain/plan";
 import { clock } from "@/lib/domain/dates";
 import { fetchExerciseMedia, type ExerciseMedia } from "@/lib/domain/media";
-import type { Exercise } from "@/lib/domain/exercises";
+import { movementRemovalReason } from "@/lib/domain/conditions";
+import { movementFlags, type Exercise } from "@/lib/domain/exercises";
 
 /**
  * Exercise detail: form cues, the over-40 joint-safety note, easier/harder
@@ -25,6 +26,7 @@ export default function ExerciseDetail({
   const router = useRouter();
   const profile = useProfile();
   const goal = GOALS[profile.goal];
+  const removedReason = movementRemovalReason(movementFlags(exercise), profile);
 
   // Tagged with the exercise it belongs to, so switching exercises reads as
   // "still searching" without an effect having to clear the previous result
@@ -85,6 +87,19 @@ export default function ExerciseDetail({
           {exercise.n}
         </h2>
       </div>
+
+      {removedReason && (
+        <Card
+          className="elev-sm"
+          role="alert"
+          style={{ padding: 14, gap: 6, borderColor: "var(--color-accent)" }}
+        >
+          <Kicker style={{ alignSelf: "flex-start" }}>WITHHELD</Kicker>
+          <span className="card-meta" style={{ margin: 0 }}>
+            {removedReason}
+          </span>
+        </Card>
+      )}
 
       <Card className="elev-sm" style={{ padding: 14, gap: 6, alignItems: "center" }}>
         <Kicker style={{ alignSelf: "flex-start" }}>
