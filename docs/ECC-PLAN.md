@@ -34,7 +34,7 @@ honour. See `docs/ECC-AUDIT.md` §2 C-4.
 | M4 Devices | Simulated, disclosed in-app |
 | M5 Buddy + media | C16 10% · C17 30% · C18 15% |
 | M6 Condition-aware | **C19, C20 done** · C21–C26 open |
-| M7 Recovery parity | **C27 done** — the blocking safety issue is closed · C28–C32 open |
+| M7 Recovery parity | **C27, C28 done** — the blocking safety issue is closed · C29–C32 open |
 
 ---
 
@@ -92,16 +92,43 @@ assert routines keep their length and `min`, milestones stay at exactly five,
 osteopenia changes nothing, and no swap is itself flagged. Mutation-verified
 twice: neutering `resolveMove` fails 3, neutering `milestonesFor` fails 1.
 
-### C28 — Recovery movement library
+### C28 — Recovery movement library *(done)*
 
-Promote every stretch, breath and restore step into a first-class movement with
-the same fields an exercise has: cues, safety note, easier and harder variation,
-equipment, joints loaded, movement flags. Roughly 20 movements across the three
-existing routines plus the lymph sequence.
+`lib/domain/recovery-library.ts` — 23 movements, each carrying what an exercise
+carries: cues, an over-40 safety note, easier and harder variations, movement
+flags. `recovery.ts` keeps the routines and the filter.
 
-*Accept:* `recoveryLibrary.test.ts` asserts every movement has cues, a safety
-note and both variations — the assertion `plan.test.ts` already makes of the 28
-exercises. No duplicate names across the combined libraries.
+Three deviations from the draft, each earning its keep:
+
+*Dose moved to the routine.* `Quadruped rock-back` was two entries before this
+— "× 8" in the morning flow and a "90 s" hold in the evening — because name and
+dose were one string. One movement at two doses is what it always was, and is
+what lets C29 give it a single detail page. A test rejects any name that still
+looks like it carries a dose.
+
+*Swaps became references.* C27 attached each replacement as a nested literal
+with a cue and a note and nothing else — so a swapped-in movement was a
+second-class citizen prescribed to exactly the users needing the most
+information. A swap now names another library entry, and the resolver returns
+that entry in full.
+
+*`props` instead of equipment, and `av` recorded but not filtered.* Nothing here
+needs a gym; what varies is whether you need a wall, a chair or a towel, and
+those are listed so nobody starts a routine and finds out halfway through.
+C27's reasoning on injuries stands — the metadata is here so C30 can judge per
+movement rather than applying a blanket rule.
+
+Box breathing joined the library, which gave the breathing timer the safety note
+it never had: the holds are the part that matters with high blood pressure. It
+is tagged `valsalva` for C21.
+
+*Accept:* met, and widened. 25 tests. Every movement has cues, a safety note and
+both variations — the bar `plan.test.ts` holds the 28 exercises to. Beyond the
+draft: no slug collides with an exercise slug (C29 needs that), every routine
+step and every swap resolves to a real entry, no swap target is itself flagged,
+and nothing in the library is unreachable. Mutation-verified three ways —
+neutering the filter fails 4, a slug collision fails 6, an orphaned entry fails
+1.
 
 ### C29 — `/recover/[slug]` detail pages
 

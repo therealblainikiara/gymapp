@@ -1,181 +1,88 @@
 import type { MovementFlag } from "./exercises";
 import { movementRemovalReason, removedMovementFlags } from "./conditions";
 import type { Declarations } from "./conditions";
+import { findRecoveryMove, type RecoveryMove } from "./recovery-library";
+
+export type {
+  RecoveryKind,
+  RecoveryMove,
+} from "./recovery-library";
+export {
+  findRecoveryMove,
+  RECOVERY_LIBRARY,
+  RECOVERY_BY_NAME,
+} from "./recovery-library";
 
 /**
- * Recovery content, and the filter that keeps it honest.
+ * Recovery routines, and the filter that keeps them honest.
  *
- * M7 / C27 — until this chunk, every step here was a bare string and nothing
- * looked at them. C20 shipped a tested guarantee that no *workout* reaches a
- * user with declared osteoporosis containing loaded spinal flexion or
- * end-range rotation; this screen was serving that same user Child's pose, a
- * supine twist and a standing hamstring reach. A filter that covers one screen
- * and not its neighbour is worse than no filter, because it manufactures trust
- * the product has not earned.
+ * M7 / C27 established the filter: C20 shipped a tested guarantee that no
+ * *workout* reaches a user with declared osteoporosis containing loaded spinal
+ * flexion or end-range rotation, while this screen was serving that same user
+ * Child's pose, a supine twist and a standing hamstring reach. A filter that
+ * covers one screen and not its neighbour is worse than no filter, because it
+ * manufactures trust the product has not earned.
  *
- * Two things are deliberately different from the workout generator:
+ * M7 / C28 moved the movements themselves into `recovery-library.ts`, so a
+ * routine is now a sequence of *references* plus the dose it wants. Two things
+ * follow from that, and both were the point:
  *
- *   1. **Recovery swaps rather than drops.** `buildPlan` picks from a pool, so
- *      removing an exercise just means picking the next one. A stretch routine
- *      is a curated sequence with a stated duration — dropping a step leaves a
- *      three-move "8 min" routine that no longer takes 8 minutes. Every flagged
- *      move therefore carries a `swap` that serves the same purpose without the
- *      mechanic, and the UI says what changed and why.
+ *   - The same movement can appear at two doses without being two movements.
+ *     `Quadruped rock-back` is "× 8" in the morning flow and a "90 s" hold in
+ *     the evening; before C28 those were separate entries with separately
+ *     drifting copy.
+ *   - A swapped-in movement is as documented as the one it replaced. C27
+ *     attached replacements as nested literals with a cue and a note and
+ *     nothing else, which meant the users who most need the information got the
+ *     least of it.
  *
- *   2. **Injuries do not filter stretches.** A flagged knee is a reason to load
- *      it less, not a reason to stop moving it, and stripping mobility work
- *      from the joint that needs it would be the wrong kind of caution. Whether
- *      any stretch should be injury-gated is a per-movement judgement, and it
- *      belongs with the rest of the per-movement metadata in C28 — not as a
- *      blanket rule smuggled in here.
- *
- * The flag assignments below are mechanical readings of each movement, not a
- * clinical review. C5 covers that, and `docs/ECC-AUDIT.md` §7 says so out loud.
- * Each judgement call is commented at the point it is made so a clinician can
- * overturn one without reverse-engineering the rest.
+ * **Recovery swaps rather than drops.** `buildPlan` picks from a pool, so
+ * removing an exercise means taking the next one. A stretch routine is a
+ * curated sequence with a stated duration — dropping a step leaves a three-move
+ * "8 min" routine that no longer takes 8 minutes.
  */
 
-export interface RecoveryMove {
-  /** Name and dose together, as the prototype wrote them. C28 splits these. */
-  n: string;
-  /** One form cue. */
-  c: string;
-  /** The over-40 safety note, matching what every exercise carries. */
-  s: string;
-  contra?: MovementFlag[];
-  /**
-   * What to prescribe instead when `contra` fires. Must itself be unflagged —
-   * `recovery.test.ts` asserts it, because a swap that is also contraindicated
-   * would pass the filter and defeat the entire chunk.
-   */
-  swap?: RecoveryMove;
+/** One line of a routine: which movement, and how much of it. */
+export interface RoutineStep {
+  move: string;
+  dose: string;
 }
 
 export interface StretchRoutine {
   n: string;
   min: number;
-  moves: RecoveryMove[];
+  steps: RoutineStep[];
 }
 
 export const STRETCHES: StretchRoutine[] = [
   {
     n: "Morning mobility flow",
     min: 8,
-    moves: [
-      {
-        n: "Cat–cow × 8, slow",
-        c: "Move one vertebra at a time — no rushing the middle",
-        s: "Small range beats big range first thing; the spine is stiffest within an hour of waking.",
-        // The evidence against flexion in osteoporosis is about *loaded* and
-        // repeated end-range flexion, not a slow unloaded quadruped rock. This
-        // is tagged anyway: the cost of the swap is nearly nil, and an app with
-        // nobody watching the range cannot police "gentle".
-        contra: ["spinal_flexion"],
-        swap: {
-          n: "Quadruped rock-back × 8, spine neutral",
-          c: "Hips drift toward the heels; stop before the low back rounds",
-          s: "Stops at the point the spine would start to curl — that stopping point is the exercise.",
-        },
-      },
-      {
-        n: "Hip circles × 10 each way",
-        c: "Hands on a wall, draw the circle with the knee",
-        s: "Hips warm up faster than they feel like they do — give them the full ten.",
-      },
-      {
-        n: "World's greatest stretch × 5 / side",
-        c: "Front foot flat, back knee straight, then reach up and rotate",
-        s: "Excellent movement, big ask. Drop the back knee to the floor if the balance is a fight.",
-        contra: ["spinal_rotation", "deep_knee_flexion"],
-        swap: {
-          n: "Half-kneeling hip flexor stretch × 5 / side",
-          c: "Back knee down, tuck the tailbone, then ease forward",
-          s: "The tuck is what makes it work — without it you hinge from the low back instead.",
-        },
-      },
-      {
-        n: "Standing hamstring reach × 8",
-        c: "Soft knees, hinge from the hips, reach toward the shins",
-        s: "Reach for the shins, not the floor — chasing the floor rounds the back.",
-        contra: ["spinal_flexion"],
-        swap: {
-          n: "Supine hamstring stretch, strap or towel, 30 s / side",
-          c: "On your back, loop the towel round the foot and draw the leg up",
-          s: "The floor holds your back flat for you, which is the whole point of doing it this way.",
-        },
-      },
+    steps: [
+      { move: "Cat–cow", dose: "× 8, slow" },
+      { move: "Hip circles", dose: "× 10 each way" },
+      { move: "World's greatest stretch", dose: "× 5 / side" },
+      { move: "Standing hamstring reach", dose: "× 8" },
     ],
   },
   {
     n: "Desk reset — express",
     min: 10,
-    moves: [
-      {
-        n: "Chin tucks × 10",
-        c: "Slide the head back over the shoulders — a double chin, not a nod",
-        s: "This is the single best antidote to a day at a screen. It should feel like almost nothing.",
-      },
-      {
-        n: "Doorway chest stretch 45 s / side",
-        c: "Forearm on the frame, elbow at shoulder height, step through",
-        s: "Elbow no higher than the shoulder; above that the stretch moves into the joint itself.",
-      },
-      {
-        n: "Thoracic rotations × 8 / side",
-        c: "Hands behind the head, turn from the ribs, hips stay square",
-        s: "Turn from the ribs. If the hips move, the low back is doing work the mid-back should.",
-        contra: ["spinal_rotation"],
-        swap: {
-          n: "Wall angel × 8",
-          c: "Back to the wall, arms slide up and down, wrists stay in contact",
-          s: "Opens the same stiff mid-back without turning it. Slide only as high as contact lasts.",
-        },
-      },
-      {
-        n: "Wrist + finger opener 60 s",
-        c: "Palm flat, fingers back, ease the weight forward",
-        s: "Ease in. Wrists that have been on a keyboard all day do not want a sudden end-range stretch.",
-      },
+    steps: [
+      { move: "Chin tuck", dose: "× 10" },
+      { move: "Doorway chest stretch", dose: "45 s / side" },
+      { move: "Thoracic rotation", dose: "× 8 / side" },
+      { move: "Wrist and finger opener", dose: "60 s" },
     ],
   },
   {
     n: "Evening unwind",
     min: 12,
-    moves: [
-      {
-        n: "Child's pose 90 s",
-        c: "Knees wide, hips back to the heels, arms long",
-        s: "Put a cushion under the hips if they don't reach the heels — comfort is the objective here.",
-        // Ninety seconds at end-range flexion under body weight. This one is
-        // not a borderline call.
-        contra: ["spinal_flexion"],
-        swap: {
-          n: "Quadruped rock-back hold 90 s, spine neutral",
-          c: "Sit back only as far as the low back stays flat, and breathe there",
-          s: "Less range, same decompression. A cushion between calves and thighs makes it restful.",
-        },
-      },
-      {
-        n: "Figure-4 stretch 60 s / side",
-        c: "Ankle across the opposite knee, draw the thigh in",
-        s: "On your back, not seated — the floor keeps the spine out of it.",
-      },
-      {
-        n: "Supine twist 60 s / side",
-        c: "Knees fall to one side, both shoulders stay down",
-        s: "Let the knees rest on a cushion rather than forcing them to the floor.",
-        contra: ["spinal_rotation"],
-        swap: {
-          n: "90/90 breathing, feet on a chair, 90 s",
-          c: "Calves on the seat, knees at a right angle, breathe out longer than in",
-          s: "The position most physios reach for to unload a tired back. Nothing to hold, nothing to twist.",
-        },
-      },
-      {
-        n: "Legs up the wall 3 min",
-        c: "Hips close to the wall, legs resting, arms wide",
-        s: "Come out of it slowly — standing straight up from here makes most people light-headed.",
-      },
+    steps: [
+      { move: "Child's pose", dose: "90 s" },
+      { move: "Figure-4 stretch", dose: "60 s / side" },
+      { move: "Supine twist", dose: "60 s / side" },
+      { move: "Legs up the wall", dose: "3 min" },
     ],
   },
 ];
@@ -184,33 +91,16 @@ export const STRETCHES: StretchRoutine[] = [
  * Lymphatic drainage. Light self-massage and breathing throughout — nothing
  * here loads or bends anything, so nothing is flagged.
  */
-export const LYMPH: RecoveryMove[] = [
-  {
-    n: "10 deep belly breaths — opens the system",
-    c: "Hand on the belly, let it rise before the chest does",
-    s: "The breathing is not a warm-up for the massage; it is the part that moves the most fluid.",
-  },
-  {
-    n: "Neck: gentle downward strokes × 10 / side",
-    c: "Flat fingers, skin-deep pressure, always downward",
-    s: "If the skin isn't moving with your fingers, you are pressing too hard.",
-  },
-  {
-    n: "Armpit pump: raise + lower arms × 15",
-    c: "Slow arcs, let the armpit open and close",
-    s: "A pump, not a stretch — no need to reach end range at either end.",
-  },
-  {
-    n: "Belly: slow clockwise circles × 10",
-    c: "Follow the ribs down the left, up the right",
-    s: "Clockwise follows the gut. Skip it after a large meal.",
-  },
-  {
-    n: "Ankle pumps + calf strokes × 15 / leg",
-    c: "Point and flex, then stroke upward toward the knee",
-    s: "Upward only. This is the one people reverse, and reversing it does nothing.",
-  },
+export const LYMPH: RoutineStep[] = [
+  { move: "Deep belly breathing", dose: "× 10 — opens the system" },
+  { move: "Neck drainage strokes", dose: "× 10 / side" },
+  { move: "Armpit pump", dose: "× 15" },
+  { move: "Abdominal circles", dose: "× 10" },
+  { move: "Ankle pumps and calf strokes", dose: "× 15 / leg" },
 ];
+
+/** The breathing timer on the Recover screen. Its copy comes from the library. */
+export const BREATHING_MOVE = "Box breathing";
 
 /**
  * Mobility milestones, shown on Progress.
@@ -221,6 +111,9 @@ export const LYMPH: RecoveryMove[] = [
  * length milestone", and which assessment fills it depends on the profile. A
  * tick therefore stays meaningful, the array still lines up, and no migration
  * is needed.
+ *
+ * Milestones are assessments rather than prescriptions, so they stay inline
+ * here rather than joining the movement library.
  *
  * `MILESTONE_COUNT` in `lib/local/store.ts` is the other half of this contract.
  */
@@ -234,7 +127,7 @@ export const MILESTONES: Milestone[] = [
   {
     n: "Touch toes with soft knees",
     // Shipped as an achievement to work toward while C20 removes the same
-    // pattern from the plan. That contradiction is the reason C27 exists.
+    // pattern from the plan. That contradiction is the reason C27 existed.
     contra: ["spinal_flexion"],
     swap: { n: "Straight-leg raise to 80°, lying down" },
   },
@@ -252,18 +145,25 @@ export const MILESTONES: Milestone[] = [
 
 // ── The filter ──────────────────────────────────────────────────────────────
 
+/** A library movement, prescribed at a dose, after filtering. */
 export interface ResolvedMove extends RecoveryMove {
-  /** The move this replaced, when a declaration forced a swap. */
+  dose: string;
+  /** The movement this replaced, when a declaration forced a swap. */
   swappedFrom?: string;
   /** Why, phrased for the user. */
   reason?: string;
+}
+
+/** A routine after filtering. Same name, same length, same stated duration. */
+export interface ResolvedRoutine extends Omit<StretchRoutine, "steps"> {
+  moves: ResolvedMove[];
 }
 
 function flagsOf(m: { contra?: MovementFlag[] }): MovementFlag[] {
   return m.contra ?? [];
 }
 
-/** Whether these declarations rule this move out. */
+/** Whether these declarations rule this movement out. */
 function ruledOut(
   m: { contra?: MovementFlag[] },
   d: Pick<Declarations, "bone_health">,
@@ -273,32 +173,40 @@ function ruledOut(
 }
 
 /**
- * The move to actually prescribe. Falls through to the swap when a declaration
- * rules the original out, carrying the reason with it so the screen can explain
- * itself rather than quietly serving something else.
+ * The movement to actually prescribe for one step, carrying the reason with it
+ * when a swap fires so the screen can explain itself rather than quietly
+ * serving something else.
+ *
+ * A step naming a movement that is not in the library is a programming error
+ * rather than a user-facing one, so it throws. `recovery.test.ts` walks every
+ * routine to make sure that never ships.
  */
-export function resolveMove(
-  m: RecoveryMove,
+export function resolveStep(
+  step: RoutineStep,
   d: Pick<Declarations, "bone_health">,
 ): ResolvedMove {
-  if (!ruledOut(m, d) || !m.swap) return m;
-  return {
-    ...m.swap,
-    swappedFrom: m.n,
-    reason: movementRemovalReason(flagsOf(m), d) ?? undefined,
-  };
-}
+  const move = findRecoveryMove(step.move);
+  if (!move) throw new Error(`Unknown recovery movement: ${step.move}`);
+  if (!ruledOut(move, d) || !move.swap) return { ...move, dose: step.dose };
 
-/** A routine after filtering. Same shape, same length, resolved moves. */
-export interface ResolvedRoutine extends Omit<StretchRoutine, "moves"> {
-  moves: ResolvedMove[];
+  const replacement = findRecoveryMove(move.swap);
+  if (!replacement) {
+    throw new Error(`${move.n} swaps to an unknown movement: ${move.swap}`);
+  }
+  return {
+    ...replacement,
+    dose: step.dose,
+    swappedFrom: move.n,
+    reason: movementRemovalReason(flagsOf(move), d) ?? undefined,
+  };
 }
 
 export function resolveRoutine(
   r: StretchRoutine,
   d: Pick<Declarations, "bone_health">,
 ): ResolvedRoutine {
-  return { ...r, moves: r.moves.map((m) => resolveMove(m, d)) };
+  const { steps, ...rest } = r;
+  return { ...rest, moves: steps.map((s) => resolveStep(s, d)) };
 }
 
 export function resolveRoutines(
@@ -310,7 +218,7 @@ export function resolveRoutines(
 export function resolveLymph(
   d: Pick<Declarations, "bone_health">,
 ): ResolvedMove[] {
-  return LYMPH.map((m) => resolveMove(m, d));
+  return LYMPH.map((s) => resolveStep(s, d));
 }
 
 /**

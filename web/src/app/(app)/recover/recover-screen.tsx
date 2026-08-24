@@ -3,7 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, Kicker } from "@/components/ui";
 import { useProfile, useStore } from "@/lib/local/provider";
-import { resolveLymph, resolveRoutines } from "@/lib/domain/recovery";
+import {
+  BREATHING_MOVE,
+  findRecoveryMove,
+  resolveLymph,
+  resolveRoutines,
+} from "@/lib/domain/recovery";
 import { clock } from "@/lib/domain/dates";
 
 /** Box breathing: 4 s per phase, 16 s per cycle. */
@@ -25,6 +30,7 @@ export default function RecoverScreen({
   const bone = profile.bone_health;
   const routines = useMemo(() => resolveRoutines({ bone_health: bone }), [bone]);
   const lymph = useMemo(() => resolveLymph({ bone_health: bone }), [bone]);
+  const breathing = findRecoveryMove(BREATHING_MOVE);
   const swapped = useMemo(
     () =>
       [...routines.flatMap((r) => r.moves), ...lymph].filter(
@@ -134,6 +140,13 @@ export default function RecoverScreen({
           >
             {running ? "Stop" : "Start breathing"}
           </button>
+          {breathing && (
+            // The timer had no safety note at all before C28 put box breathing
+            // in the library. The holds are the part that matters.
+            <span className="card-meta" style={{ margin: 0 }}>
+              {breathing.s}
+            </span>
+          )}
         </Card>
 
         <Card style={{ flex: "1 1 300px", padding: 16, gap: 8 }}>
@@ -141,7 +154,7 @@ export default function RecoverScreen({
           {lymph.map((step, i) => (
             <div
               key={step.n}
-              title={step.c}
+              title={step.c.join(" · ")}
               style={{
                 display: "flex",
                 gap: 8,
@@ -160,7 +173,9 @@ export default function RecoverScreen({
               >
                 0{i + 1}
               </span>
-              <span>{step.n}</span>
+              <span>
+                {step.n} — {step.dose}
+              </span>
             </div>
           ))}
           <p className="card-meta" style={{ margin: "4px 0 0" }}>
@@ -196,7 +211,7 @@ export default function RecoverScreen({
               {r.moves.map((m) => (
                 <span
                   key={m.n}
-                  title={m.c}
+                  title={m.c.join(" · ")}
                   style={{
                     fontSize: 12.5,
                     opacity: 0.8,
@@ -205,7 +220,7 @@ export default function RecoverScreen({
                       : undefined,
                   }}
                 >
-                  — {m.n}
+                  — {m.n} {m.dose}
                   {m.swappedFrom && " ✎"}
                 </span>
               ))}
