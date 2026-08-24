@@ -16,6 +16,7 @@ import {
 } from "@/lib/domain/recovery-plan";
 import { clock } from "@/lib/domain/dates";
 import { exerciseSlug } from "@/lib/domain/exercises";
+import { protocolsFor } from "@/lib/domain/protocols";
 
 /** Box breathing: 4 s per phase, 16 s per cycle. */
 const PHASES = ["INHALE", "HOLD", "EXHALE", "HOLD"];
@@ -89,6 +90,10 @@ export default function RecoverScreen({
   const featuredIndex = featured ? days.indexOf(featured) : -1;
   const isToday = !!todaysRecovery(days, profile.avail_days, dow);
   const breathing = findRecoveryMove(BREATHING_MOVE);
+  // C23: guidance, not programming, so it is not behind the clinician gate —
+  // see the note in protocols.ts. Driven by the declaration rather than by age
+  // or sex, which is rule 1 of M6.
+  const protocols = protocolsFor(profile);
   const swapped = useMemo(
     () =>
       [...days.flatMap((d) => d.moves), ...lymph].filter((m) => m.swappedFrom),
@@ -343,6 +348,62 @@ export default function RecoverScreen({
           </p>
         </Card>
       </div>
+
+      {protocols.length > 0 && (
+        <>
+          <SectionHeading title="Protocols" sub="for what you told us" />
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))",
+              gap: 18,
+            }}
+          >
+            {protocols.map((p) => (
+              <Card key={p.id} style={{ padding: 16, gap: 8 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                >
+                  <Kicker>{p.kicker}</Kicker>
+                  <span className="tag tag-neutral">{p.when}</span>
+                </div>
+                <span className="card-title" style={{ fontSize: 17 }}>
+                  {p.title}
+                </span>
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 4 }}
+                >
+                  {p.steps.map((step, i) => (
+                    <div
+                      key={step}
+                      style={{ display: "flex", gap: 8, fontSize: 12.5 }}
+                    >
+                      <span
+                        style={{
+                          color: "var(--color-accent)",
+                          fontFamily: "var(--font-heading)",
+                          flex: "none",
+                        }}
+                      >
+                        0{i + 1}
+                      </span>
+                      <span>{step}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="card-meta" style={{ margin: 0 }}>
+                  {p.note}
+                </p>
+              </Card>
+            ))}
+          </div>
+        </>
+      )}
 
       <SectionHeading title="Restore" sub="the rest of the week" />
 

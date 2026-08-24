@@ -206,11 +206,46 @@ finisher guard could be deleted with every test still passing, because the real
 finisher scheme ("Finisher") is unparseable anyway. It now builds a day with
 parseable schemes on purpose, which is the case the guard actually exists for.
 
-### C23 — Recover additions
+### C23 — Recover additions *(done)*
 
-Thermoregulation protocol, sleep-disruption routine, warm-up extended 5 → 8–10
-min for 45+, and load-management coaching for peri. Content plus conditional
-rendering — no generator changes.
+`lib/domain/protocols.ts` — three protocols, rendered as their own section on
+Recovery when the declaration calls for them, plus `warmUpCopy(age)` feeding the
+warm-up line on every plan card. Content plus conditional rendering, exactly as
+scoped: nothing prescribed, nothing removed, no generator touched.
+
+| Protocol | Shown to | Covers |
+|---|---|---|
+| Thermoregulation | peri, post | Training through a flush — timing, layers, cooling the pulse points |
+| Sleep disruption | peri, post | The 3am wake-up — room temperature, bedding, what to do when you wake |
+| Load management | peri only | Progressing when tendons adapt slower than muscle |
+
+**Not behind the clinician gate, deliberately.** The gate exists because
+prescribing exercise on a self-reported diagnosis carries risk. "Keep a cold
+drink to hand" carries none. C20 put removals outside the gate because
+withholding is the absence of programming; the same reasoning puts guidance on
+the other side of the same line, and making someone find a clinician before they
+can read what tends to help would be the gate working against them. The
+programming these protocols talk around — the rep shift, the longer rests — is
+C21's, and that is gated.
+
+**Load management is perimenopause only.** It is about the rate of change, not
+the end state: post-menopause the fall has happened and the tendon has adapted
+to where it is.
+
+**The warm-up is the one thing in M6 that keys off age**, and it is worth
+defending rather than hiding. Rule 1 forbids using age as a proxy for a
+condition — "she is 52 so she must be menopausal". It does not require
+pretending joints do not change with age, and warm-up length is general practice
+for older joints rather than condition-specific programming. An unknown age gets
+the longer warm-up, consistently with `offersHealthStep`: a blank field is not
+evidence of being young.
+
+*Accept:* met. 13 tests. Every protocol has steps, a note and a when; nothing in
+the library is unreachable; the branch is on `menopause_stage` alone, so age
+cannot leak in as a proxy — `protocolsFor` takes one argument and the test
+asserts its arity. Mutation-verified three ways: showing protocols to everyone
+fails 1, showing load management post-menopause fails 2, treating an unknown age
+as young fails 1.
 
 ### C24 — Diet additions
 

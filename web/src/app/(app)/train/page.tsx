@@ -9,6 +9,7 @@ import { buildPlan } from "@/lib/domain/plan";
 import { EXERCISE_DB } from "@/lib/domain/exercises";
 import { exerciseSlug, injuryLabel } from "@/lib/domain/exercises";
 import { GOALS } from "@/lib/domain/goals";
+import { warmUpCopy } from "@/lib/domain/protocols";
 
 /**
  * Train — the week's plan, generated client-side from the profile by the same
@@ -114,7 +115,7 @@ export default function TrainScreen() {
                 paddingBottom: 7,
               }}
             >
-              Joint-friendly warm-up — 5 min easy movement first
+              {warmUpCopy(profile.age)}
             </div>
             <div style={{ display: "flex", flexDirection: "column" }}>
               {d.exercises.map((ex, i) =>
