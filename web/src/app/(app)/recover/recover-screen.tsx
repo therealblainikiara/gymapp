@@ -9,7 +9,11 @@ import {
   findRecoveryMove,
   resolveLymph,
 } from "@/lib/domain/recovery";
-import { buildRecovery } from "@/lib/domain/recovery-plan";
+import {
+  buildRecovery,
+  sessionHref,
+  todaysRecovery,
+} from "@/lib/domain/recovery-plan";
 import { clock } from "@/lib/domain/dates";
 import { exerciseSlug } from "@/lib/domain/exercises";
 
@@ -23,6 +27,23 @@ const PHASES = ["INHALE", "HOLD", "EXHALE", "HOLD"];
  */
 function moveHref(m: { n: string; dose: string }) {
   return `/recover/${exerciseSlug(m.n)}?dose=${encodeURIComponent(m.dose)}`;
+}
+
+/**
+ * Recovery reads as three sections, and Stretch is the first of them.
+ *
+ * Before C32 the screen opened with a breathing timer and put stretching in a
+ * grid of equal cards below the fold, which is a fair description of how much
+ * the product thought stretching mattered. The section headers exist so it
+ * reads as a peer of the workout plan rather than as tools you might use.
+ */
+function SectionHeading({ title, sub }: { title: string; sub: string }) {
+  return (
+    <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+      <h3 style={{ margin: 0, textTransform: "uppercase" }}>{title}</h3>
+      <span className="card-meta">{sub}</span>
+    </div>
+  );
 }
 
 export default function RecoverScreen({
@@ -58,6 +79,15 @@ export default function RecoverScreen({
     ],
   );
   const lymph = useMemo(() => resolveLymph({ bone_health: bone }), [bone]);
+
+  // The session for today if today is a recovery day, otherwise the next one.
+  // "Nothing scheduled, come back Tuesday" is not a useful thing for a stretch
+  // section to say — there is always a session worth doing.
+  const dow = new Date().getDay();
+  const featured =
+    todaysRecovery(days, profile.avail_days, dow) ?? days[0] ?? null;
+  const featuredIndex = featured ? days.indexOf(featured) : -1;
+  const isToday = !!todaysRecovery(days, profile.avail_days, dow);
   const breathing = findRecoveryMove(BREATHING_MOVE);
   const swapped = useMemo(
     () =>
@@ -99,6 +129,99 @@ export default function RecoverScreen({
         animation: "fadeUp .3s both",
       }}
     >
+      {featured && (
+        <>
+          <SectionHeading
+            title="Stretch"
+            sub={
+              isToday
+                ? "today's session"
+                : `next session — ${featured.label.split(" —")[0]}`
+            }
+          />
+          <Card
+            className="elev-sm"
+            style={{ padding: 18, gap: 10, borderColor: "var(--color-accent)" }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "baseline",
+                gap: 10,
+                flexWrap: "wrap",
+              }}
+            >
+              <h4 style={{ margin: 0, textTransform: "uppercase" }}>
+                {featured.routine}
+              </h4>
+              <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+                <span className="tag tag-accent">≈ {featured.minutes} MIN</span>
+                <span className="tag tag-neutral">{featured.focus}</span>
+              </div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              {featured.moves.map((m, n) => (
+                <Link
+                  key={m.n}
+                  href={sessionHref(featuredIndex, n, m, exerciseSlug)}
+                  className="gym-rowbtn gym-exrow"
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: 8,
+                    width: "100%",
+                    padding: "7px 2px",
+                    borderBottom:
+                      "1px solid color-mix(in srgb, var(--color-text) 8%, transparent)",
+                    fontSize: 13.5,
+                  }}
+                >
+                  <span style={{ color: "var(--color-accent-700)" }}>
+                    {n + 1}. {m.n}
+                    {m.swappedFrom && " ✎"}
+                  </span>
+                  <span style={{ whiteSpace: "nowrap", opacity: 0.7 }}>
+                    {m.dose}
+                  </span>
+                </Link>
+              ))}
+            </div>
+            {featured.reasons.map((r) => (
+              <span key={r} className="card-meta" style={{ margin: 0 }}>
+                {r}
+              </span>
+            ))}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <Link
+                href={sessionHref(
+                  featuredIndex,
+                  0,
+                  featured.moves[0],
+                  exerciseSlug,
+                )}
+                className="btn btn-primary"
+              >
+                Start session
+              </Link>
+              <button
+                type="button"
+                onClick={() => void store.logRecovery(featured.minutes)}
+                disabled={status === "loading"}
+                className="btn btn-secondary"
+              >
+                Mark session done ✓
+              </button>
+            </div>
+            <span className="card-meta" style={{ margin: 0 }}>
+              {featured.tip}
+            </span>
+          </Card>
+        </>
+      )}
+
+      <SectionHeading title="Breathe" sub="and drain" />
+
       <div
         style={{
           display: "flex",
@@ -221,6 +344,8 @@ export default function RecoverScreen({
         </Card>
       </div>
 
+      <SectionHeading title="Restore" sub="the rest of the week" />
+
       <div
         style={{
           display: "grid",
@@ -228,7 +353,7 @@ export default function RecoverScreen({
           gap: 18,
         }}
       >
-        {days.map((d) => (
+        {days.filter((d) => d !== featured).map((d) => (
           <Card
             key={d.label}
             style={{ padding: 16, gap: 8, animation: `fadeUp .4s ${d.delay} both` }}

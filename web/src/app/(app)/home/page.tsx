@@ -370,8 +370,8 @@ export default function HomeScreen() {
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         <QuickTile
           href="/recover"
-          title="10-min desk reset"
-          sub="Busy-day stretch · no kit"
+          title="Today's stretch"
+          sub="Generated for you · no kit"
         />
         <QuickTile
           href="/recover?breathe=1"

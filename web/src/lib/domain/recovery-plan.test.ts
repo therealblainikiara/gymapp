@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   buildRecovery,
   estimateMinutes,
+  locateInSession,
+  pickSteps,
+  sessionHref,
   moveBudget,
   recoveryDays,
   todaysRecovery,
@@ -307,5 +310,131 @@ describe("the templates are used, not discarded", () => {
     const first = days[0].moves.map((m) => m.n).join();
     const repeat = days.find((d, i) => i > 0 && d.routine === days[0].routine);
     if (repeat) expect(repeat.moves.map((m) => m.n).join()).not.toBe(first);
+  });
+});
+
+describe("C32 — trimming keeps what the routine is for", () => {
+  it("keeps the closer when the session is short", () => {
+    // Trimming from the end took "Legs up the wall" — the entire reason Evening
+    // unwind is restful — out of every session under six movements.
+    const evening = STRETCHES[2];
+    for (let budget = 2; budget <= evening.steps.length; budget++) {
+      const picked = pickSteps(evening.steps, budget).map((x) => x.move);
+      expect(picked, `budget ${budget}`).toContain("Legs up the wall");
+      expect(picked).toHaveLength(Math.min(budget, evening.steps.length));
+    }
+  });
+
+  it("keeps every marked step in every template, at every budget", () => {
+    for (const r of STRETCHES) {
+      const keepers = r.steps.filter((x) => x.keep).map((x) => x.move);
+      expect(keepers.length, `${r.n} marks nothing`).toBeGreaterThan(0);
+      for (let budget = keepers.length; budget <= r.steps.length; budget++) {
+        const picked = pickSteps(r.steps, budget).map((x) => x.move);
+        for (const k of keepers) {
+          expect(picked, `${r.n} at ${budget} dropped ${k}`).toContain(k);
+        }
+      }
+    }
+  });
+
+  it("puts the selection back in the template's order", () => {
+    // A closer that survives the trim but arrives second is not a closer.
+    for (const r of STRETCHES) {
+      for (let budget = 2; budget <= r.steps.length; budget++) {
+        const order = r.steps.map((x) => x.move);
+        const picked = pickSteps(r.steps, budget).map((x) => x.move);
+        const positions = picked.map((m) => order.indexOf(m));
+        expect(positions, `${r.n} at ${budget}`).toEqual(
+          [...positions].sort((a, b) => a - b),
+        );
+      }
+    }
+  });
+
+  it("returns the template untouched when it fits", () => {
+    for (const r of STRETCHES) {
+      expect(pickSteps(r.steps, r.steps.length)).toBe(r.steps);
+      expect(pickSteps(r.steps, 99)).toBe(r.steps);
+    }
+  });
+});
+
+describe("C32 — following a session movement by movement", () => {
+  const days = buildRecovery(base);
+  const slug = (n: string) => n.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+
+  it("locates a position and knows what comes next", () => {
+    const first = days[0].moves[0];
+    const at = locateInSession(days, "0", "0", slug(first.n), slug);
+    expect(at?.move.n).toBe(first.n);
+    expect(at?.next?.n).toBe(days[0].moves[1].n);
+    expect(at?.isLast).toBe(false);
+  });
+
+  it("knows when it has reached the end", () => {
+    const last = days[0].moves.length - 1;
+    const at = locateInSession(
+      days,
+      "0",
+      String(last),
+      slug(days[0].moves[last].n),
+      slug,
+    );
+    expect(at?.isLast).toBe(true);
+    expect(at?.next).toBeNull();
+  });
+
+  it("ignores a stale position rather than following it", () => {
+    // A link shared or bookmarked before a declaration changed can name a
+    // movement no longer at that index. Showing someone a session they are not
+    // in is worse than showing them the movement on its own.
+    const s0 = slug(days[0].moves[0].n);
+    expect(locateInSession(days, "0", "0", "some-other-movement", slug)).toBeNull();
+    expect(locateInSession(days, "99", "0", s0, slug)).toBeNull();
+    expect(locateInSession(days, "0", "99", s0, slug)).toBeNull();
+    expect(locateInSession(days, "abc", "0", s0, slug)).toBeNull();
+    expect(locateInSession(days, undefined, undefined, s0, slug)).toBeNull();
+  });
+
+  it("builds a href that round-trips back to the same position", () => {
+    for (let i = 0; i < days[0].moves.length; i++) {
+      const m = days[0].moves[i];
+      const url = new URL(sessionHref(0, i, m, slug), "https://example.test");
+      const at = locateInSession(
+        days,
+        url.searchParams.get("day") ?? undefined,
+        url.searchParams.get("i") ?? undefined,
+        url.pathname.split("/").pop()!,
+        slug,
+      );
+      expect(at?.move.n, url.href).toBe(m.n);
+      expect(url.searchParams.get("dose")).toBe(m.dose);
+    }
+  });
+
+  it("walks the whole session from the first movement to the last", () => {
+    // The C32 accept criterion: a stretch session can be followed movement by
+    // movement without passing through a workout.
+    let at = locateInSession(days, "0", "0", slug(days[0].moves[0].n), slug);
+    const walked: string[] = [];
+    let guard = 0;
+    while (at && guard++ < 20) {
+      walked.push(at.move.n);
+      if (at.isLast) break;
+      const url = new URL(
+        sessionHref(0, at.index + 1, at.next!, slug),
+        "https://example.test",
+      );
+      at = locateInSession(
+        days,
+        url.searchParams.get("day") ?? undefined,
+        url.searchParams.get("i") ?? undefined,
+        url.pathname.split("/").pop()!,
+        slug,
+      );
+    }
+    expect(walked).toEqual(days[0].moves.map((m) => m.n));
+    expect(at?.isLast).toBe(true);
   });
 });

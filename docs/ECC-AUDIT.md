@@ -105,6 +105,12 @@ decision from an earlier session, not a bug.
 
 ## 4. Issues in current code
 
+> **All six recovery issues below (I-1 to I-6) were closed by Milestone 7,
+> C27–C32.** They are kept as written because the plan's chunk descriptions
+> refer to them, and because an audit that quietly edits its findings once they
+> are fixed is not much of an audit. I-7 is still open — it is configuration,
+> not code.
+
 **I-1 · blocking · Recovery prescribes the movements C20 removes.**
 `lib/domain/recovery.ts` is unfiltered by anything — not equipment, not
 injuries, not health declarations. Two commits ago I shipped an exhaustively

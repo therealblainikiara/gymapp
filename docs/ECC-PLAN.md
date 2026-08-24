@@ -34,7 +34,7 @@ honour. See `docs/ECC-AUDIT.md` §2 C-4.
 | M4 Devices | Simulated, disclosed in-app |
 | M5 Buddy + media | C16 10% · C17 30% · C18 15% |
 | M6 Condition-aware | **C19, C20 done** · C21–C26 open |
-| M7 Recovery parity | **C27–C31 done** — the blocking safety issue is closed · C32 open |
+| M7 Recovery parity | **Done** — C27–C32 |
 
 ---
 
@@ -257,19 +257,48 @@ and the streak counts a mobility date. Mutation-verified twice — not widening
 the CHECK fails the insert, filtering `Mobility` out of the view fails the
 assertion by name.
 
-### C32 — A pure stretching section
+### C32 — A pure stretching section *(done)*
 
-With C28–C30 in place, this is presentation: a dedicated Stretch section at the
-top of Recovery with its own generated routine, its own entry point from Home,
-and enough visual weight to read as a peer of the workout plan rather than a
-footnote under the breathing timer.
+Recovery now reads as three sections — **Stretch**, **Breathe**, **Restore** —
+and Stretch leads. Before this the screen opened with a breathing timer and put
+stretching in a grid of equal cards below the fold, which was a fair description
+of how much the product thought stretching mattered.
 
-*Accept:* a stretch-only session can be started, followed movement by movement,
-and logged, without passing through a workout. Depends on C29, C30, C31.
+The Stretch section carries today's generated session (or the next one, because
+"nothing scheduled, come back Tuesday" is not a useful thing for a stretch
+section to say), with **Start session**, the numbered movement list, and **Mark
+session done ✓**. Home's "10-min desk reset" tile becomes "Today's stretch".
 
-*Gate for M7:* a user with declared osteoporosis can complete a full recovery
-session — generated for their profile, every movement explained, none of them
-contraindicated — and see it counted on Progress.
+**Following a session reuses the detail page rather than adding a second
+screen.** `/recover/[slug]` already has the cues, safety note, variations and
+timer; a guided run is that page in sequence, so position is threaded through
+the URL as `?day=&i=`. A second screen would have had to keep all of it in step.
+Each movement shows a progress bar, what is next, and — on the last one —
+**Finish and log ✓**, which writes the C31 mobility event and returns to
+Recovery.
+
+Position is re-resolved against a freshly generated week on arrival. A link
+shared or bookmarked before a declaration changed can name a movement no longer
+at that index; the page falls back to standalone rather than showing someone a
+session they are not in.
+
+**C30's deferred trade-off is closed.** Trimming took from the end, which
+removed "Legs up the wall" — the entire reason Evening unwind is restful — from
+every session under six movements. Steps can now be marked `keep`; `pickSteps()`
+takes those first, fills in order, then restores template order, so a closer
+stays a closer. A 10-minute Evening unwind is now Child's pose plus Legs up the
+wall rather than Child's pose plus Figure-4.
+
+*Accept:* met. 9 new tests, 231 total. A session walks first movement to last
+through generated hrefs and arrives at `isLast`; every `keep` step survives every
+budget in every template with order preserved; stale and malformed positions
+resolve to null. Mutation-verified twice — trimming from the end fails 3,
+accepting a stale position fails 1.
+
+*Gate for M7:* **met.** A user with declared osteoporosis gets a session
+generated for their profile, placed on a day training leaves free, with every
+movement explained and none of them contraindicated, followable movement by
+movement, and counted on Progress when they finish it.
 
 ---
 

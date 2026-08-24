@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useMemo, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Blueprint, Card, Kicker } from "@/components/ui";
 import { FitnessBuddy } from "@/components/fitness-buddy";
-import { useProfile } from "@/lib/local/provider";
+import { useProfile, useStore } from "@/lib/local/provider";
 import { clock } from "@/lib/domain/dates";
 import { exerciseSlug, injuryLabel } from "@/lib/domain/exercises";
 import { fetchExerciseMedia, type ExerciseMedia } from "@/lib/domain/media";
@@ -15,6 +16,11 @@ import {
   isPerSide,
   type RecoveryMove,
 } from "@/lib/domain/recovery";
+import {
+  buildRecovery,
+  locateInSession,
+  sessionHref,
+} from "@/lib/domain/recovery-plan";
 
 /**
  * Recovery movement detail — cues, the over-40 safety note, variations, a hold
@@ -37,11 +43,42 @@ import {
 export default function RecoveryDetail({
   move,
   dose,
+  slug,
+  day,
+  i,
 }: {
   move: RecoveryMove;
   dose: string;
+  slug: string;
+  day?: string;
+  i?: string;
 }) {
   const profile = useProfile();
+  const store = useStore();
+  const router = useRouter();
+
+  // The week is regenerated here rather than passed through the URL: it depends
+  // on the profile, the profile lives in the local store, and a position that
+  // no longer matches is better ignored than followed.
+  const at = useMemo(() => {
+    const days = buildRecovery({
+      bone_health: profile.bone_health,
+      pelvic_floor: profile.pelvic_floor,
+      session_len: profile.session_len,
+      level: profile.level,
+      avail_days: profile.avail_days,
+    });
+    return locateInSession(days, day, i, slug, exerciseSlug);
+  }, [
+    profile.bone_health,
+    profile.pelvic_floor,
+    profile.session_len,
+    profile.level,
+    profile.avail_days,
+    day,
+    i,
+    slug,
+  ]);
 
   const reason = movementRemovalReason(move.contra ?? [], profile);
   const replacement = reason && move.swap ? findRecoveryMove(move.swap) : null;
@@ -112,9 +149,39 @@ export default function RecoveryDetail({
         ← Back to recovery
       </Link>
 
+      {at && (
+        <div
+          style={{
+            display: "flex",
+            gap: 4,
+            alignItems: "center",
+            flexWrap: "wrap",
+          }}
+          aria-label={`Movement ${at.index + 1} of ${at.day.moves.length}`}
+        >
+          {at.day.moves.map((m, n) => (
+            <span
+              key={m.n}
+              style={{
+                height: 4,
+                flex: 1,
+                minWidth: 18,
+                borderRadius: 2,
+                background:
+                  n <= at.index
+                    ? "var(--color-accent)"
+                    : "color-mix(in srgb, var(--color-text) 12%, transparent)",
+              }}
+            />
+          ))}
+        </div>
+      )}
+
       <div>
         <Kicker style={{ fontSize: 11 }}>
-          {move.kind.toUpperCase()}
+          {at
+            ? `${at.day.routine.toUpperCase()} — ${at.index + 1} OF ${at.day.moves.length}`
+            : move.kind.toUpperCase()}
           {dose && ` — ${dose.toUpperCase()}`}
         </Kicker>
         <h2 style={{ margin: "4px 0 0", textTransform: "uppercase" }}>
@@ -354,6 +421,45 @@ export default function RecoveryDetail({
           </button>
         </div>
       </Card>
+
+      {at && (
+        <Card className="elev-sm" style={{ padding: 14, gap: 10 }}>
+          <Kicker>{at.isLast ? "LAST MOVEMENT" : "NEXT UP"}</Kicker>
+          {at.next && (
+            <span className="card-meta" style={{ margin: 0 }}>
+              {at.next.n} — {at.next.dose}
+            </span>
+          )}
+          {at.isLast ? (
+            <button
+              type="button"
+              onClick={() => {
+                // The whole point of C32: a stretch session can be started,
+                // followed and logged without ever opening a workout.
+                void store.logRecovery(at.day.minutes);
+                router.push("/recover");
+              }}
+              className="btn btn-primary"
+              style={{ alignSelf: "flex-start" }}
+            >
+              Finish and log ✓
+            </button>
+          ) : (
+            <Link
+              href={sessionHref(
+                at.dayIndex,
+                at.index + 1,
+                at.next!,
+                exerciseSlug,
+              )}
+              className="btn btn-primary"
+              style={{ alignSelf: "flex-start" }}
+            >
+              Next movement →
+            </Link>
+          )}
+        </Card>
+      )}
     </div>
   );
 }

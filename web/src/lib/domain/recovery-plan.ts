@@ -5,6 +5,7 @@ import {
   holdSeconds,
   isPerSide,
   resolveStep,
+  type RoutineStep,
   type ResolvedMove,
   type RecoveryKind,
 } from "./recovery";
@@ -155,6 +156,25 @@ function fillPool(kind: RecoveryKind, s: RecoverySettings, di: number) {
   return [...pool.filter((m) => !braced(m)), ...pool.filter(braced)];
 }
 
+/**
+ * The steps of a template that fit the budget, in the template's own order.
+ *
+ * Trimming from the end is the obvious implementation and the wrong one: it
+ * took "Legs up the wall" — the entire reason Evening unwind is restful — out of
+ * every session under six movements. Steps marked `keep` are taken first, then
+ * the rest in order, then the whole selection is put back into template order so
+ * the sequencing survives. A closer stays a closer.
+ */
+export function pickSteps(steps: RoutineStep[], budget: number): RoutineStep[] {
+  if (steps.length <= budget) return steps;
+  const idx = new Map(steps.map((step, i) => [step, i]));
+  const kept = steps.filter((step) => step.keep).slice(0, budget);
+  const filler = steps
+    .filter((step) => !step.keep)
+    .slice(0, Math.max(0, budget - kept.length));
+  return [...kept, ...filler].sort((a, b) => idx.get(a)! - idx.get(b)!);
+}
+
 export function buildRecovery(s: RecoverySettings): RecoveryDay[] {
   const days = recoveryDays(s.avail_days);
   const budget = moveBudget(s.session_len, s.level);
@@ -166,8 +186,7 @@ export function buildRecovery(s: RecoverySettings): RecoveryDay[] {
     const used = new Set<string>();
     const moves: ResolvedMove[] = [];
 
-    for (const step of template.steps) {
-      if (moves.length >= budget) break;
+    for (const step of pickSteps(template.steps, budget)) {
       const resolved = resolveStep(step, s);
       if (used.has(resolved.n)) continue;
       used.add(resolved.n);
@@ -231,6 +250,69 @@ export function buildRecovery(s: RecoverySettings): RecoveryDay[] {
       delay: `${(di * 0.07).toFixed(2)}s`,
     };
   });
+}
+
+/**
+ * A guided run through one session, movement by movement.
+ *
+ * The detail page at `/recover/[slug]` already has the cues, the safety note,
+ * the variations and the timer. Following a session is that page in sequence,
+ * so C32 threads position through the URL rather than building a second screen
+ * that would have to keep all of it in step.
+ *
+ * Position is `day` and `i`. Both are checked against the freshly generated week
+ * on arrival: a link shared or bookmarked before a declaration changed can name
+ * a movement that is no longer at that index, and the page falls back to
+ * standalone rather than showing someone a session they are not in.
+ */
+export function sessionHref(
+  day: number,
+  i: number,
+  move: { n: string; dose: string },
+  slugOf: (name: string) => string,
+): string {
+  const q = new URLSearchParams({
+    dose: move.dose,
+    day: String(day),
+    i: String(i),
+  });
+  return `/recover/${slugOf(move.n)}?${q}`;
+}
+
+export interface SessionPosition {
+  day: RecoveryDay;
+  dayIndex: number;
+  index: number;
+  move: ResolvedMove;
+  next: ResolvedMove | null;
+  isLast: boolean;
+}
+
+/** Resolve a `?day=&i=` pair against this profile's week, or null if stale. */
+export function locateInSession(
+  days: RecoveryDay[],
+  dayParam: string | undefined,
+  iParam: string | undefined,
+  slug: string,
+  slugOf: (name: string) => string,
+): SessionPosition | null {
+  if (dayParam === undefined || iParam === undefined) return null;
+  const dayIndex = Number(dayParam);
+  const index = Number(iParam);
+  if (!Number.isInteger(dayIndex) || !Number.isInteger(index)) return null;
+  const day = days[dayIndex];
+  const move = day?.moves[index];
+  // The URL names a movement; if the generated week no longer agrees, the
+  // position is stale and following it would be worse than ignoring it.
+  if (!day || !move || slugOf(move.n) !== slug) return null;
+  return {
+    day,
+    dayIndex,
+    index,
+    move,
+    next: day.moves[index + 1] ?? null,
+    isLast: index === day.moves.length - 1,
+  };
 }
 
 /** Which generated day is scheduled for `dow`, or null. Mirrors `todaysPlan`. */

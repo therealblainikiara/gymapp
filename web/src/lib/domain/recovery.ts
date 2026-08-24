@@ -57,6 +57,15 @@ export {
 export interface RoutineStep {
   move: string;
   dose?: string;
+  /**
+   * This movement is the point of the routine, and survives a short session.
+   *
+   * C30 trimmed from the end, which took "Legs up the wall" — the entire reason
+   * Evening unwind is restful — out of every session under six movements. A
+   * generator that drops the best movement to hit a count is worse than the
+   * fixed routine it replaced.
+   */
+  keep?: boolean;
 }
 
 export interface StretchRoutine {
@@ -70,7 +79,9 @@ export const STRETCHES: StretchRoutine[] = [
     n: "Morning mobility flow",
     min: 8,
     steps: [
-      { move: "Cat–cow" },
+      // The spine is stiffest within an hour of waking; this is what the
+      // routine is for, whatever else gets trimmed.
+      { move: "Cat–cow", keep: true },
       { move: "Hip circles" },
       { move: "World's greatest stretch" },
       { move: "Standing hamstring reach" },
@@ -80,7 +91,8 @@ export const STRETCHES: StretchRoutine[] = [
     n: "Desk reset — express",
     min: 10,
     steps: [
-      { move: "Chin tuck" },
+      // "The single best antidote to a day at a screen", per its own note.
+      { move: "Chin tuck", keep: true },
       { move: "Doorway chest stretch" },
       { move: "Thoracic rotation" },
       { move: "Wrist and finger opener" },
@@ -98,7 +110,7 @@ export const STRETCHES: StretchRoutine[] = [
       // Deliberately not pinned — the twist swaps to a breath drill, which has
       // no sides, and "90/90 breathing — 60 s / side" is nonsense.
       { move: "Supine twist" },
-      { move: "Legs up the wall" },
+      { move: "Legs up the wall", keep: true },
     ],
   },
 ];
