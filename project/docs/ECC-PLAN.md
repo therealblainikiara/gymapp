@@ -1,5 +1,8 @@
 # ECC-PLAN — Gym App: prototype → real product
 
+> **Superseded by `docs/ECC-PLAN.md` (2026-08-24).** Kept unmodified as part of
+> the Claude Design export bundle. The M6 status lines below are stale.
+
 Source of truth for scope: `docs/ECC-AUDIT.md`. The prototype (`Gym App v2.dc.html`) is the living spec — every screen, rule and copy decision in it was user-approved.
 
 ## Goals (testable)

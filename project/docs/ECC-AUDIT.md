@@ -1,5 +1,8 @@
 # ECC-AUDIT — Gym App (prototype)
 
+> **Superseded by `docs/ECC-AUDIT.md` (2026-08-24).** Kept unmodified as part of
+> the Claude Design export bundle; it audited the prototype before the app existed.
+
 Date: 2026-08-23 · Auditor: design session (cold-start audit of design prototype, not a git repo)
 
 ## Repo state
