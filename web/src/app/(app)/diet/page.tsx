@@ -5,6 +5,7 @@ import { Card, Kicker } from "@/components/ui";
 import { useGym, useProfile, useStore } from "@/lib/local/provider";
 import { dietaryLabel, groceryList, mealsForDay, REQ_NAMES } from "@/lib/domain/meals";
 import { dailyTargets } from "@/lib/domain/nutrition";
+import { flushTriggers } from "@/lib/domain/meals";
 import { GOALS } from "@/lib/domain/goals";
 import { today } from "@/lib/domain/dates";
 
@@ -39,7 +40,14 @@ export default function DietScreen() {
     ageYears: profile.age,
     sex: profile.sex,
     latestKg,
+    // C24: the last screen that read none of the declarations.
+    declarations: profile,
   });
+
+  // Shown only to someone who told us about flushes — everyone else gets a tag
+  // that means nothing to them, and a tag that means nothing gets ignored.
+  const showTriggers =
+    profile.menopause_stage === "peri" || profile.menopause_stage === "post";
 
   return (
     <div
@@ -118,6 +126,14 @@ export default function DietScreen() {
           </div>
           <span className="card-meta" style={{ marginTop: 6 }}>
             {targets.note}
+            {targets.proteinNote && (
+              <>
+                <br />
+                <span style={{ color: "var(--color-accent-700)" }}>
+                  {targets.proteinNote}
+                </span>
+              </>
+            )}
           </span>
         </Card>
 
@@ -178,7 +194,19 @@ export default function DietScreen() {
               }}
             >
               <Kicker style={{ fontSize: 11 }}>{meal.slot}</Kicker>
-              {meal.ai && <span className="tag tag-accent">ANTI-INFLAM.</span>}
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {meal.ai && <span className="tag tag-accent">ANTI-INFLAM.</span>}
+                {showTriggers &&
+                  flushTriggers(meal).map((t) => (
+                    <span
+                      key={t}
+                      className="tag tag-outline"
+                      title="A common flush trigger — for some people, on some days. Information, not a rule."
+                    >
+                      {t.toUpperCase()}
+                    </span>
+                  ))}
+              </div>
             </div>
             <span className="card-title">{meal.name}</span>
             <p className="card-body" style={{ flex: "none" }}>
@@ -253,6 +281,58 @@ export default function DietScreen() {
           </Card>
         ))}
       </div>
+
+      {showTriggers && (
+        <p className="card-meta" style={{ margin: 0 }}>
+          Tagged ingredients are common flush triggers — for some people, on some
+          days. Nothing is removed on a guess; the tag is there so you can spot
+          your own pattern.
+        </p>
+      )}
+
+      {targets.micros.length > 0 && (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))",
+            gap: 18,
+          }}
+        >
+          {targets.micros.map((m) => (
+            <Card key={m.id} style={{ padding: 16, gap: 8 }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <Kicker>{m.label.toUpperCase()}</Kicker>
+                <span className="tag tag-accent">{m.amount}</span>
+              </div>
+              <p className="card-body" style={{ flex: "none" }}>
+                {m.why}
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                {m.foods.map((f) => (
+                  <span key={f} style={{ fontSize: 12.5, opacity: 0.8 }}>
+                    — {f}
+                  </span>
+                ))}
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {targets.micros.length > 0 && (
+        <p className="card-meta" style={{ margin: 0 }} role="note">
+          Food first. Calcium and vitamin D supplements interact with several
+          common medications and are not right for everyone — talk to your GP or
+          pharmacist before buying any of it, and take a blood test over a guess.
+        </p>
+      )}
 
       <Card style={{ padding: 16, gap: 8 }}>
         <Kicker>GROCERY LIST — TODAY&rsquo;S FOUR MEALS</Kicker>

@@ -309,6 +309,37 @@ export const REQ_NAMES: Record<DietaryKey, string> = {
   nf: "NUT-FREE",
 };
 
+/**
+ * M6 / C24 — ingredients that commonly set off a hot flush.
+ *
+ * Derived from the ingredient list rather than hand-set per meal, so a meal
+ * added later is covered without anyone remembering to tag it. The cost of
+ * deriving is false positives, so the keywords are narrow and deliberate:
+ * "chilli" but never "pepper", because the hummus snack has bell peppers in it
+ * and flagging those would train people to ignore the tag.
+ *
+ * This is information, not a filter. Alcohol, caffeine and spice are triggers
+ * for some people and not others, on some days and not others, and removing a
+ * meal on a guess would be worse than saying "this one has chilli in it".
+ */
+const FLUSH_KEYWORDS: [RegExp, string][] = [
+  [/chill?i|cayenne|jalape|sriracha|harissa|hot sauce/i, "chilli heat"],
+  [/curry|tikka|madras|vindaloo/i, "spice blend"],
+  [/coffee|espresso|caffeine|matcha/i, "caffeine"],
+  [/wine|beer|brandy|rum|vodka|whisk|alcohol/i, "alcohol"],
+];
+
+/** The flush triggers in a meal, empty when there are none. */
+export function flushTriggers(meal: Pick<Meal, "ing">): string[] {
+  const hits = new Set<string>();
+  for (const ingredient of meal.ing) {
+    for (const [re, label] of FLUSH_KEYWORDS) {
+      if (re.test(ingredient)) hits.add(label);
+    }
+  }
+  return [...hits];
+}
+
 export function dietaryLabel(id: DietaryKey): string {
   return DIETARY.find(([k]) => k === id)?.[1] ?? id;
 }

@@ -247,14 +247,47 @@ asserts its arity. Mutation-verified three ways: showing protocols to everyone
 fails 1, showing load management post-menopause fails 2, treating an unknown age
 as young fails 1.
 
-### C24 — Diet additions
+### C24 — Diet additions *(done)*
 
-Calcium and vitamin D targets, protein 1.6 → 2.0 g/kg for 45+, iron flag, and
-flush-trigger tags on alcohol/caffeine/spicy items. Extends `nutrition.ts`,
-which is already pure and well covered.
+Diet was the last screen reading none of the declarations. `dailyTargets` now
+takes an optional `declarations`, and Diet passes the profile.
 
-*Accept:* targets change when the declarations change; the existing
-Mifflin-St Jeor tests still pass unchanged.
+**The protein raise is driven by the declaration, not by age — and this chunk's
+own accept criterion is what caught it.** The plan said "1.6 → 2.0 g/kg for
+45+". The existing Mifflin-St Jeor fixture is a 47-year-old expecting 135 g and
+is required to pass unchanged, so age cannot be the trigger; rule 1 says it
+should not be either. Driving it off `menopause_stage` or `bone_health` is
+better evidence anyway: 1.6 g/kg is already this app's over-40s baseline, twice
+the general population figure, and the step to 2.0 is the response to muscle and
+bone loss accelerating — which the declaration marks and a birthday does not. A
+well-written accept criterion catching a contradiction in its own chunk is the
+system working.
+
+**Micronutrients are food-first and supplements are a clinician's call.**
+Calcium and vitamin D for menopause or low bone density; iron for perimenopause
+only, because after the last period the loss stops and carrying the flag forward
+would have people supplementing iron they no longer lose. Iron's "amount" is *ask
+for a ferritin test*, never a dose — it is the one micronutrient where guessing
+is actively harmful, since excess is toxic and the symptoms of low and high
+overlap. A test asserts no dose in milligrams ever appears there.
+
+Ungated, consistently with C23. These are public-health figures anyone can look
+up, and withholding them from someone who declared osteoporosis until they tick
+a box would leave them with less information than a leaflet. The screen carries
+an explicit "talk to your GP or pharmacist before buying any of it" line.
+
+**Flush triggers are derived from the ingredient list, not hand-tagged per
+meal**, so a meal added later is covered without anyone remembering. The cost of
+deriving is false positives, so the keywords are narrow: "chilli" but never
+"pepper", because the hummus snack has bell peppers in it and a tag that fires
+on those trains people to ignore it. Nothing is filtered — alcohol, caffeine and
+spice are triggers for some people on some days, and removing a meal on a guess
+would be worse than saying what is in it. Tags show only to someone who declared
+a menopause stage.
+
+*Accept:* met. 19 new tests. The existing Mifflin-St Jeor tests pass untouched.
+Mutation-verified three ways: raising protein for everyone fails 6, carrying
+iron past perimenopause fails 1, adding "pepper" to the chilli keyword fails 2.
 
 ### C25 — Progress additions
 

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { groceryList, MEAL_SLOTS, MEALS, mealsForDay } from "./meals";
+import {
+  MEALS,
+  MEAL_SLOTS,
+  flushTriggers,
+  groceryList,
+  mealsForDay,
+} from "./meals";
 import type { DietaryKey } from "@/lib/types/database";
 
 /** Every subset of the four requirements. */
@@ -94,5 +100,53 @@ describe("meal library", () => {
         expect(meal.prep.length, `${meal.name} prep`).toBeGreaterThan(0);
       }
     }
+  });
+});
+
+describe("C24 — flush triggers", () => {
+  it("spots chilli, spice blends, caffeine and alcohol", () => {
+    expect(flushTriggers({ ing: ["Chilli flakes"] })).toEqual(["chilli heat"]);
+    expect(flushTriggers({ ing: ["Tikka paste"] })).toEqual(["spice blend"]);
+    expect(flushTriggers({ ing: ["Espresso"] })).toEqual(["caffeine"]);
+    expect(flushTriggers({ ing: ["Red wine"] })).toEqual(["alcohol"]);
+  });
+
+  it("does not flag bell peppers", () => {
+    // The hummus snack has peppers in it. Flagging those would train people to
+    // ignore the tag, which is worse than not having one.
+    expect(flushTriggers({ ing: ["Hummus", "Carrots", "Peppers"] })).toEqual([]);
+  });
+
+  it("does not flag ordinary food", () => {
+    for (const ing of [
+      ["Greek yogurt", "Mixed berries", "Granola", "Honey"],
+      ["Salmon fillets", "Quinoa", "Broccoli", "Lemon"],
+      ["Chicken breast", "Rice", "Black beans", "Corn", "Limes"],
+    ]) {
+      expect(flushTriggers({ ing }), ing.join(", ")).toEqual([]);
+    }
+  });
+
+  it("reports each trigger once however many ingredients carry it", () => {
+    expect(
+      flushTriggers({ ing: ["Chilli flakes", "Jalapeños", "Sriracha"] }),
+    ).toEqual(["chilli heat"]);
+  });
+
+  it("is derived, so a new meal is covered without being tagged by hand", () => {
+    // The reason this is computed from `ing` rather than a per-meal boolean.
+    const tagged = MEAL_SLOTS.flatMap((slot) =>
+      MEALS[slot].filter((m) => flushTriggers(m).length > 0),
+    );
+    expect(tagged.length).toBeGreaterThan(0);
+    for (const m of tagged) {
+      expect(m.ing.join(" "), m.name).toMatch(
+        /chill?i|curry|tikka|coffee|wine|salsa|jalape/i,
+      );
+    }
+  });
+
+  it("finds nothing to flag in a meal with no ingredients", () => {
+    expect(flushTriggers({ ing: [] })).toEqual([]);
   });
 });
