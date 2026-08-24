@@ -289,19 +289,46 @@ a menopause stage.
 Mutation-verified three ways: raising protein for everyone fails 6, carrying
 iron past perimenopause fails 1, adding "pepper" to the chilli keyword fails 2.
 
-### C25 — Progress additions
+### C25 — Progress additions *(done)*
 
-Symptom tracking on the daily check-in (flushes, mood), waist circumference
-beside weight, and function milestones — grip strength, 30 s sit-to-stand,
-single-leg balance — which predict outcomes better than weight does.
+Closes the last of C19's dead columns. `checkins.flushes`, `checkins.mood` and
+`weights.waist_cm` shipped to production two days ago and nothing had read or
+written any of them since.
 
-Note the framing already established: the Progress screen refuses to hand out
-BMI verdicts, and waist is the measurement that actually moves at menopause.
+**Symptom tracking is offered only to someone who declared a menopause stage.**
+A five-question daily form is a form people abandon, and asking a 30-year-old
+man about flushes is noise that teaches everyone to skip the whole thing.
+Flushes are a **count** with a stepper, not a 1–5 scale: "how many" is a fact
+the user knows, where "rate your flushes" is a judgement nobody makes
+consistently day to day. An untouched field stays null rather than defaulting to
+a middle value — an invented 3 is indistinguishable from a real one and would
+flatten the very pattern this exists to show.
 
-### C26 — Blood pressure log *(deferred)*
+**Function tests needed a migration** — `20260824140000_function_tests.sql`,
+applied as `gymapp_function_tests`. `grip_kg`, `sit_to_stand` and `balance_sec`
+join `waist_cm` on `gymapp.weights`, which is already the measurements table in
+everything but name. Verified against the full migration set on a scratch
+Postgres before the hosted project, and the columns read back from live.
 
-Its own table and migration, when C21's BP rule proves it is wanted. Not built
-speculatively.
+**No verdicts, and that is not a style choice.** Published norms for these tests
+are stratified by age and sex, so a verdict means telling a 55-year-old woman
+she is "below average for her age" — a clinical judgement this app is not
+qualified to make and a demotivating one to be wrong about. It is the same
+reasoning that already keeps BMI categories off this screen. A test greps the
+copy for "average", "normal", "below", "percentile" and "for your age" so a
+verdict cannot drift in later.
+
+*Accept:* met. 18 tests plus four DB assertions. Missing readings are skipped
+rather than zeroed — logging a weight and no grip reading is the normal case,
+and a zero would draw a cliff on the chart that never happened.
+Mutation-verified three ways: zeroing missing readings fails 2, dropping the
+bounds check fails 1, and slipping a verdict into the copy fails 1.
+
+### C26 — Blood pressure log *(deferred, and still deferred)*
+
+C21's blood-pressure rule shipped without needing one: it removes long holds,
+lengthens rests and adds an exhale cue, none of which reads a logged reading.
+The trigger for building this remains evidence that users want it.
 
 ## Sequence
 

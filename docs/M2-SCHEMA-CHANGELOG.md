@@ -207,6 +207,24 @@ that recovery does not count.
 Widening a CHECK cannot invalidate an existing row, so this is safe to apply to
 a live table before the application code that writes the new value.
 
+## `20260824140000_function_tests.sql`
+
+Applied as `gymapp_function_tests`. M6 / C25 — grip strength, 30-second
+sit-to-stand and single-leg balance.
+
+They go in `gymapp.weights` rather than a new table because that is already the
+measurements table in everything but name: C19 put `waist_cm` there for the same
+reason. Same cadence, same primary key, same RLS policy, no new grants to get
+wrong. Renaming the table to `measurements` would be tidier and is not worth a
+breaking migration on a live database.
+
+Every column is nullable — logging a weight and no grip reading is the normal
+case, and a default would invent a measurement nobody took.
+
+CHECK bounds reject typos, not performance. The top of each range is comfortably
+beyond any plausible human value, because a rejected write stalls the whole
+outbox behind it and that is a far worse failure than storing an odd number.
+
 ## Unchanged
 
 Table and column names, types, defaults and the Sunday-week arithmetic

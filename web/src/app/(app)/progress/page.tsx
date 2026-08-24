@@ -7,6 +7,12 @@ import { activeDaySet, scaleSpark, streakFrom, weightSpark } from "@/lib/domain/
 import { bodyReadout } from "@/lib/domain/nutrition";
 import { milestonesFor } from "@/lib/domain/recovery";
 import { weekKeys } from "@/lib/domain/dates";
+import {
+  asFunctionValue,
+  changeLine,
+  functionSeries,
+  type FunctionTestId,
+} from "@/lib/domain/function-tests";
 
 export default function ProgressScreen() {
   const store = useStore();
@@ -14,6 +20,8 @@ export default function ProgressScreen() {
   const { checkins, events, weights, ui } = useGym();
 
   const [kgInput, setKgInput] = useState("");
+  const [waistInput, setWaistInput] = useState("");
+  const [testInput, setTestInput] = useState<Record<string, string>>({});
   const [heightInput, setHeightInput] = useState(
     profile.height_cm ? String(profile.height_cm) : "",
   );
@@ -46,6 +54,14 @@ export default function ProgressScreen() {
   const latestKg = weights.length ? weights[weights.length - 1].kg : null;
   const body = bodyReadout(profile.height_cm, latestKg);
   const recentWeights = weights.slice(-30);
+  const latestWaist = [...weights].reverse().find((w) => w.waist_cm != null);
+  const series = useMemo(() => functionSeries(weights), [weights]);
+
+  /** Waist bounds match the CHECK, so a typo never reaches the outbox. */
+  function asWaist(raw: string): number | null {
+    const n = parseFloat(raw);
+    return Number.isFinite(n) && n >= 40 && n <= 200 ? n : null;
+  }
 
   function commitNumber(
     raw: string,
@@ -129,6 +145,7 @@ export default function ProgressScreen() {
               </svg>
               <span className="card-meta">
                 Latest {latestKg} kg · {recentWeights.length} entries
+                {latestWaist && ` · waist ${latestWaist.waist_cm} cm`}
               </span>
             </>
           ) : (
@@ -161,13 +178,26 @@ export default function ProgressScreen() {
               onClick={() => {
                 const kg = parseFloat(kgInput);
                 if (!Number.isFinite(kg)) return;
-                void store.addWeight(kg);
+                void store.addWeight(kg, {
+                  waist_cm: asWaist(waistInput),
+                });
                 setKgInput("");
+                setWaistInput("");
               }}
               className="btn btn-primary"
             >
               Log kg
             </button>
+            <input
+              className="input"
+              type="number"
+              inputMode="decimal"
+              placeholder="Waist cm"
+              aria-label="Waist circumference in centimetres"
+              value={waistInput}
+              onChange={(e) => setWaistInput(e.target.value)}
+              style={{ maxWidth: 120 }}
+            />
             <input
               className="input"
               type="number"
@@ -262,6 +292,115 @@ export default function ProgressScreen() {
           )}
         </Card>
       </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))",
+          gap: 18,
+        }}
+      >
+        {series.map((s) => (
+          <Card key={s.test.id} style={{ padding: 16, gap: 8 }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <Kicker>{s.test.label.toUpperCase()}</Kicker>
+              <span className="tag tag-neutral">{s.test.unit}</span>
+            </div>
+            <span
+              style={{
+                fontFamily: "var(--font-heading)",
+                fontWeight: 600,
+                fontSize: 30,
+                lineHeight: 1,
+              }}
+            >
+              {s.latest ?? "—"}
+            </span>
+            <span className="card-meta" style={{ margin: 0 }}>
+              {changeLine(s)}
+            </span>
+            {s.points.length >= 2 && (
+              <svg
+                viewBox="0 0 240 60"
+                style={{ width: "100%" }}
+                role="img"
+                aria-label={`${s.test.label} trend`}
+              >
+                <polyline
+                  points={weightSpark(s.points.map((p) => p.value))}
+                  fill="none"
+                  stroke="var(--color-accent)"
+                  strokeWidth="1.5"
+                />
+              </svg>
+            )}
+            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {s.test.protocol.map((line) => (
+                <span key={line} style={{ fontSize: 12, opacity: 0.75 }}>
+                  — {line}
+                </span>
+              ))}
+            </div>
+            <p className="card-meta" style={{ margin: 0 }}>
+              {s.test.why}
+            </p>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <input
+                className="input"
+                type="number"
+                inputMode="decimal"
+                step={s.test.step}
+                placeholder={s.test.unit}
+                aria-label={`${s.test.label} in ${s.test.unit}`}
+                value={testInput[s.test.id] ?? ""}
+                onChange={(e) =>
+                  setTestInput((t) => ({ ...t, [s.test.id]: e.target.value }))
+                }
+                style={{ maxWidth: 100 }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const v = asFunctionValue(
+                    s.test.id as FunctionTestId,
+                    testInput[s.test.id],
+                  );
+                  // Needs a weight for the day, since these ride on the same
+                  // row. Logging a grip reading is not a reason to invent a
+                  // weight, so the button asks for one rather than guessing.
+                  if (v === null || latestKg === null) return;
+                  void store.addWeight(latestKg, { [s.test.id]: v });
+                  setTestInput((t) => ({ ...t, [s.test.id]: "" }));
+                }}
+                disabled={latestKg === null}
+                className="btn btn-secondary"
+                style={{ fontSize: 12.5, padding: "5px 10px" }}
+              >
+                Log
+              </button>
+            </div>
+            {latestKg === null && (
+              <span className="card-meta" style={{ margin: 0 }}>
+                Log a weight first — these are stored with it.
+              </span>
+            )}
+          </Card>
+        ))}
+      </div>
+
+      <p className="card-meta" style={{ margin: 0 }}>
+        These three predict falls, fractures and independence better than body
+        weight does, and they answer to training. There are no age or sex bands
+        here on purpose: your own trend is the comparison that matters, and the
+        only one we can stand behind.
+      </p>
 
       <Card style={{ padding: 16, gap: 8 }}>
         <Kicker>MOBILITY MILESTONES</Kicker>

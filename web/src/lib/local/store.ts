@@ -394,14 +394,27 @@ export class GymStore {
     this.scheduleFlush();
   }
 
-  async saveCheckin(values: { sleep: number; stress: number; energy: number }) {
+  async saveCheckin(values: {
+    sleep: number;
+    stress: number;
+    energy: number;
+    flushes?: number | null;
+    mood?: number | null;
+  }) {
     if (!this.db) return;
     const row: CheckinRow = {
       user_id: this.userId,
       date: today(),
-      flushes: null,
-      mood: null,
-      ...values,
+      sleep: values.sleep,
+      stress: values.stress,
+      energy: values.energy,
+      // Null means "not tracked" and is distinct from a zero flush count. Only
+      // someone who declared a menopause stage is asked, so most rows stay
+      // null forever and that has to stay distinguishable from "none today".
+      // Written explicitly rather than by spread: `{ flushes: undefined }`
+      // from a caller would otherwise overwrite the null and fail the insert.
+      flushes: values.flushes ?? null,
+      mood: values.mood ?? null,
     };
     await this.writeLocal("checkins", row);
     await enqueue(this.db, {
@@ -444,15 +457,33 @@ export class GymStore {
     this.scheduleFlush();
   }
 
-  async addWeight(kg: number) {
+  /**
+   * Log today's measurements. Weight is required; everything else is optional
+   * and null means "not measured today" rather than zero — a zero would draw a
+   * cliff on the chart that never happened.
+   *
+   * Upserts on (user_id, date), so measuring grip in the morning and waist in
+   * the evening merges into one row rather than losing the first.
+   */
+  async addWeight(
+    kg: number,
+    extra?: Partial<
+      Pick<WeightRow, "waist_cm" | "grip_kg" | "sit_to_stand" | "balance_sec">
+    >,
+  ) {
     if (!this.db) return;
     if (!Number.isFinite(kg) || kg < 20 || kg > 300) return;
+    const date = today();
+    const prior = this.snapshot.weights.find((w) => w.date === date);
     const row: WeightRow = {
       user_id: this.userId,
-      date: today(),
+      date,
       kg,
       source: "manual",
-      waist_cm: null,
+      waist_cm: extra?.waist_cm ?? prior?.waist_cm ?? null,
+      grip_kg: extra?.grip_kg ?? prior?.grip_kg ?? null,
+      sit_to_stand: extra?.sit_to_stand ?? prior?.sit_to_stand ?? null,
+      balance_sec: extra?.balance_sec ?? prior?.balance_sec ?? null,
     };
     await this.writeLocal("weights", row);
     await enqueue(this.db, {

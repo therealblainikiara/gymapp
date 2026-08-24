@@ -144,6 +144,31 @@ select assert_rejected(
 
 delete from gymapp.events where type = 'Mobility';
 
+-- M6 / C25 — the function tests sit beside weight, and reject typos only.
+insert into gymapp.weights (user_id, date, kg, waist_cm, grip_kg, sit_to_stand, balance_sec)
+  values ('11111111-1111-1111-1111-111111111111', date '2026-08-24', 84, 92, 38, 14, 45);
+select assert(
+  (select grip_kg from gymapp.weights limit 1) = 38,
+  'weights: function tests must round-trip beside the weight');
+select assert(
+  (select count(*) from gymapp.weights
+    where sit_to_stand is not null and balance_sec is not null) = 1,
+  'weights: sit-to-stand and balance must store');
+
+-- A weight with no function tests is the normal case, not an error.
+insert into gymapp.weights (user_id, date, kg)
+  values ('11111111-1111-1111-1111-111111111111', date '2026-08-25', 84);
+select assert(
+  (select grip_kg from gymapp.weights where date = date '2026-08-25') is null,
+  'weights: logging a weight alone must not require a grip reading');
+
+select assert_rejected(
+  $q$insert into gymapp.weights (user_id, date, kg, grip_kg)
+     values ('11111111-1111-1111-1111-111111111111', date '2026-08-26', 84, 900)$q$,
+  'weights: an implausible grip reading is a typo and must be refused');
+
+delete from gymapp.weights;
+
 -- writes are scoped to the caller
 select assert_denied(
   $q$insert into gymapp.events (user_id, date, type, minutes)

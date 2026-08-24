@@ -125,6 +125,10 @@ export type WeightRow = {
   source: EventSource;
   /** Tracks the visceral shift around menopause that BMI cannot see. */
   waist_cm: number | null;
+  /** M6 / C25 — function tests. Null means "not measured that day". */
+  grip_kg: number | null;
+  sit_to_stand: number | null;
+  balance_sec: number | null;
 };
 
 export type HydrationRow = {

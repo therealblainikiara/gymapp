@@ -218,11 +218,25 @@ export function planLegacyImport(
         kg,
         source: "manual",
         waist_cm: null,
+        grip_kg: null,
+        sit_to_stand: null,
+        balance_sec: null,
       };
       continue;
     }
     seenWeightDates.add(date);
-    weights.push({ user_id: userId, date, kg, source: "manual", waist_cm: null });
+    weights.push({
+      user_id: userId,
+      date,
+      kg,
+      source: "manual",
+      // The browser prototype logged weight only; the rest of the measurement
+      // row starts empty rather than at zero.
+      waist_cm: null,
+      grip_kg: null,
+      sit_to_stand: null,
+      balance_sec: null,
+    });
   }
 
   const hydration: HydrationRow[] = [];

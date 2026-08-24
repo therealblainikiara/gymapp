@@ -27,7 +27,13 @@ export default function HomeScreen() {
   const profile = useProfile();
   const { checkins, events, hydration, ui } = useGym();
 
-  const [draft, setDraft] = useState({ sleep: 0, stress: 0, energy: 0 });
+  const [draft, setDraft] = useState({
+    sleep: 0,
+    stress: 0,
+    energy: 0,
+    mood: 0,
+    flushes: 0,
+  });
 
   const now = new Date();
   const dow = now.getDay();
@@ -43,6 +49,10 @@ export default function HomeScreen() {
   const dinner = meals[2];
 
   const ci = checkins.find((c) => c.date === todayStr);
+  // C25: symptom tracking is offered to whoever declared a menopause stage,
+  // never inferred from age or sex — rule 1 of M6.
+  const tracksSymptoms =
+    profile.menopause_stage === "peri" || profile.menopause_stage === "post";
 
   // C22: a bad night makes today's session smaller, not optional. Applied here
   // rather than inside buildPlan because it is about today, not the week — the
@@ -166,6 +176,13 @@ export default function HomeScreen() {
                   ["sleep", "Sleep"],
                   ["stress", "Stress"],
                   ["energy", "Energy"],
+                  // C25: only asked of someone who declared a menopause stage.
+                  // A five-question daily form is a form people abandon, and
+                  // asking a 30-year-old man about flushes is noise that
+                  // teaches everyone to skip the whole thing.
+                  ...(tracksSymptoms
+                    ? ([["mood", "Mood"]] as const)
+                    : ([] as const)),
                 ] as const
               ).map(([key, label]) => (
                 <div
@@ -205,6 +222,67 @@ export default function HomeScreen() {
                   </div>
                 </div>
               ))}
+              {tracksSymptoms && (
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: 8 }}
+                >
+                  <span
+                    className="text-muted"
+                    style={{ fontSize: 12.5, width: 52, flex: "none" }}
+                    id="ci-flushes"
+                  >
+                    Flushes
+                  </span>
+                  <div
+                    style={{ display: "flex", gap: 5, alignItems: "center" }}
+                    role="group"
+                    aria-labelledby="ci-flushes"
+                  >
+                    {/* A count, not a 1–5 scale: "how many" is a fact the user
+                        knows, where "rate your flushes" is a judgement nobody
+                        can make consistently day to day. */}
+                    <button
+                      type="button"
+                      aria-label="One fewer flush"
+                      onClick={() =>
+                        setDraft((d) => ({
+                          ...d,
+                          flushes: Math.max(0, d.flushes - 1),
+                        }))
+                      }
+                      className="btn"
+                      style={{ width: 30, height: 30, padding: 0, ...toggleStyle(false) }}
+                    >
+                      −
+                    </button>
+                    <span
+                      aria-live="polite"
+                      style={{
+                        fontFamily: "var(--font-heading)",
+                        fontSize: 15,
+                        minWidth: 24,
+                        textAlign: "center",
+                      }}
+                    >
+                      {draft.flushes}
+                    </span>
+                    <button
+                      type="button"
+                      aria-label="One more flush"
+                      onClick={() =>
+                        setDraft((d) => ({
+                          ...d,
+                          flushes: Math.min(30, d.flushes + 1),
+                        }))
+                      }
+                      className="btn"
+                      style={{ width: 30, height: 30, padding: 0, ...toggleStyle(false) }}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              )}
               <button
                 type="button"
                 onClick={() =>
@@ -212,6 +290,11 @@ export default function HomeScreen() {
                     sleep: draft.sleep || 3,
                     stress: draft.stress || 3,
                     energy: draft.energy || 3,
+                    // Untouched stays null rather than defaulting to a middle
+                    // value: an invented 3 is indistinguishable from a real one
+                    // and would flatten the very pattern this is here to show.
+                    mood: tracksSymptoms && draft.mood ? draft.mood : null,
+                    flushes: tracksSymptoms ? draft.flushes : null,
                   })
                 }
                 className="btn btn-primary"

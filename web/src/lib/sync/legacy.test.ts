@@ -198,11 +198,19 @@ describe("legacy import hardens against a corrupt blob", () => {
       USER,
       newId,
     );
+    // Every measurement the prototype never captured comes in null rather than
+    // absent or zero: "not measured" is not the same as a reading of nothing,
+    // and the charts skip nulls instead of drawing a cliff.
+    const empty = {
+      source: "manual",
+      waist_cm: null,
+      grip_kg: null,
+      sit_to_stand: null,
+      balance_sec: null,
+    };
     expect(r.weights).toEqual([
-      // waist_cm is null rather than absent: the prototype never captured it,
-      // and "not measured" is not the same as zero.
-      { user_id: USER, date: "2026-08-20", kg: 81, source: "manual", waist_cm: null },
-      { user_id: USER, date: "2026-08-21", kg: 82, source: "manual", waist_cm: null },
+      { user_id: USER, date: "2026-08-20", kg: 81, ...empty },
+      { user_id: USER, date: "2026-08-21", kg: 82, ...empty },
     ]);
   });
 
