@@ -33,7 +33,7 @@ honour. See `docs/ECC-AUDIT.md` §2 C-4.
 | M3 Social | C10 80% · C11 40% · C12 70% |
 | M4 Devices | Simulated, disclosed in-app |
 | M5 Buddy + media | C16 10% · C17 30% · C18 15% |
-| M6 Condition-aware | **C19–C21 done** · C22–C26 open |
+| M6 Condition-aware | **C19–C22 done** · C23–C26 open |
 | M7 Recovery parity | **Done** — C27–C32 |
 
 ---

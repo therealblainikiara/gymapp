@@ -170,12 +170,41 @@ was folded into `Heel drop`'s harder variation rather than left as dead
 content); the block ignored the session budget; and the rep-shift reason claimed
 "compound lifts" while the override reached every movement.
 
-### C22 — Check-in autoregulation
+### C22 — Check-in autoregulation *(done)*
 
+`autoregulate(checkin, settings)` and `autoregulated(day, a)` in `plan.ts`.
 `sleep ≤ 2` drops one set and lowers the intensity target for that day, keeping
 the session rather than skipping it. Reads the existing check-in; no new data.
 
-*Accept:* plan for the same profile differs on a poor-sleep day and says why.
+**Not behind the clinician gate, and not a condition rule.** This is ordinary
+training sense that applies to everyone who checks in, declared or not. Routing
+it through `conditionProgrammingActive` would make a night of bad sleep matter
+only to people with a diagnosis.
+
+**Applied to today, not to the week.** It lives outside `buildPlan` and is
+applied by Home to the day `todaysPlan` returns. One bad night is not a reason
+for Thursday's session to shrink.
+
+**Sleep is the only trigger**, per this plan. Energy and stress sit on the same
+form and are tempting to fold in, but they move for reasons that have nothing to
+do with recovery capacity — a stressful week is often a reason to train, not to
+train less.
+
+Two edges worth naming. `setsForLevel` floors at two and a one-set session is
+not a session, so a beginner already at the floor keeps their sets and gets the
+intensity cut instead — and the reason says so rather than silently doing
+nothing. Finishers and the bone-loading block are skipped: neither is a working
+set, and the block is already the lightest thing in the session.
+
+*Accept:* met. 9 tests. The plan differs on a poor-sleep day, says why on that
+day, and composes with C21 rather than overwriting it — a perimenopausal profile
+on a bad night gets "2 × 6–8", keeping the rep range C21 moved.
+Mutation-verified three ways.
+
+One test was rewritten after a mutation check exposed it as vacuous: the
+finisher guard could be deleted with every test still passing, because the real
+finisher scheme ("Finisher") is unparseable anyway. It now builds a day with
+parseable schemes on purpose, which is the case the guard actually exists for.
 
 ### C23 — Recover additions
 

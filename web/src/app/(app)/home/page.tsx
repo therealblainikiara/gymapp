@@ -6,7 +6,13 @@ import { useRouter } from "next/navigation";
 import { Card, CameraIcon, Kicker, toggleStyle } from "@/components/ui";
 import { useGym, useProfile, useStore } from "@/lib/local/provider";
 import { DAY_NAMES, today, weekKeys, weekStart } from "@/lib/domain/dates";
-import { buildPlan, PREF_TIME_LABELS, todaysPlan } from "@/lib/domain/plan";
+import {
+  autoregulate,
+  autoregulated,
+  buildPlan,
+  PREF_TIME_LABELS,
+  todaysPlan,
+} from "@/lib/domain/plan";
 import { mealsForDay } from "@/lib/domain/meals";
 import { scaleSpark } from "@/lib/domain/progress";
 
@@ -28,8 +34,7 @@ export default function HomeScreen() {
   const todayStr = today(now);
 
   const days = useMemo(() => buildPlan(profile), [profile]);
-  const plan = todaysPlan(profile, days, dow);
-  const isTrainingDay = plan !== null;
+  const scheduled = todaysPlan(profile, days, dow);
 
   const meals = useMemo(
     () => mealsForDay(profile.dietary, ui.mealIdx),
@@ -38,6 +43,13 @@ export default function HomeScreen() {
   const dinner = meals[2];
 
   const ci = checkins.find((c) => c.date === todayStr);
+
+  // C22: a bad night makes today's session smaller, not optional. Applied here
+  // rather than inside buildPlan because it is about today, not the week — the
+  // other six days should not shrink because of one night.
+  const regulation = autoregulate(ci, profile);
+  const plan = scheduled ? autoregulated(scheduled, regulation) : null;
+  const isTrainingDay = plan !== null;
   const last7 = checkins.slice(-7);
   const hydroMl = hydration.find((h) => h.date === todayStr)?.ml ?? 0;
 
@@ -242,6 +254,14 @@ export default function HomeScreen() {
                 {plan.focus} ·{" "}
                 {profile.kit === "dbbw" ? "dumbbells" : "bodyweight"}
               </span>
+              {regulation && (
+                <span
+                  className="card-meta"
+                  style={{ margin: 0, color: "var(--color-accent-700)" }}
+                >
+                  {regulation.reason}
+                </span>
+              )}
               <div style={{ display: "flex", gap: 8, marginTop: 2 }}>
                 <Link
                   href="/train"

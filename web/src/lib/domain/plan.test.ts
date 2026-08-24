@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { buildPlan, setsForLevel, todaysPlan, type PlanSettings } from "./plan";
+import {
+  autoregulate,
+  autoregulated,
+  buildPlan,
+  dropOneSet,
+  setsForLevel,
+  todaysPlan,
+  type PlanDay,
+  type PlanSettings,
+} from "./plan";
 import {
   ALL_EXERCISES,
   ALWAYS_SAFE,
@@ -444,5 +453,118 @@ describe("C21 — the rules reach the plan", () => {
       const names = namesIn({ ...base, goal, muscles: MUSCLE_KEYS });
       for (const n of names) expect(isBoneLoading(n), n).toBe(false);
     }
+  });
+});
+
+describe("C22 — check-in autoregulation", () => {
+  const poor = { sleep: 2 };
+  const fine = { sleep: 3 };
+
+  it("fires on a poor night and nothing else", () => {
+    expect(autoregulate({ sleep: 1 }, base)).toBeTruthy();
+    expect(autoregulate(poor, base)).toBeTruthy();
+    for (const sleep of [3, 4, 5]) {
+      expect(autoregulate({ sleep }, base), String(sleep)).toBeNull();
+    }
+  });
+
+  it("does nothing when there is no check-in today", () => {
+    // Not checking in is not evidence of a bad night.
+    expect(autoregulate(null, base)).toBeNull();
+    expect(autoregulate(undefined, base)).toBeNull();
+  });
+
+  it("applies to everyone, declared or not, cleared or not", () => {
+    // Ordinary training sense, not a condition rule. Routing it through the
+    // clinician gate would make a bad night matter only to the diagnosed.
+    expect(autoregulate(poor, { goal: "general", level: "advanced" })).toBeTruthy();
+  });
+
+  it("drops one set, and keeps the session", () => {
+    const day = buildPlan(base)[0];
+    const a = autoregulate(poor, base)!;
+    const after = autoregulated(day, a);
+    expect(a.setsDropped).toBe(1);
+    expect(day.exercises[0].scheme).toBe("3 × 10–12");
+    expect(after.exercises[0].scheme).toBe("2 × 10–12");
+    // The session is smaller, not gone. Skipping breaks the streak, and the
+    // streak is most of what keeps someone training.
+    expect(after.exercises).toHaveLength(day.exercises.length);
+  });
+
+  it("never drops below the two-set floor", () => {
+    // A beginner is already at the minimum; one set is not a session.
+    const beginner = { ...base, level: "beginner" as const };
+    const a = autoregulate(poor, beginner)!;
+    expect(a.setsDropped).toBe(0);
+    expect(a.reason).toContain("minimum sets");
+    const day = buildPlan(beginner)[0];
+    expect(autoregulated(day, a).exercises).toEqual(day.exercises);
+  });
+
+  it("says why, on the day it changed", () => {
+    // The C22 accept criterion: the plan differs on a poor-sleep day and says
+    // why. A day that quietly shrank is indistinguishable from a bug.
+    const day = buildPlan(base)[0];
+    const after = autoregulated(day, autoregulate(poor, base));
+    expect(after.reasons.join(" ")).toContain("slept badly");
+    expect(after.notes.join(" ")).toContain("in the tank");
+    expect(autoregulated(day, autoregulate(fine, base))).toBe(day);
+  });
+
+  it("leaves finishers and bone loading alone", () => {
+    // Neither is a working set: a finisher is one prescribed round, and the
+    // bone block is already the lightest thing in the session.
+    //
+    // Built by hand with *parseable* schemes on purpose. Today's real finisher
+    // reads "Finisher" and the bone block "10 → 50 reps", neither of which
+    // `dropOneSet` can parse — so a test over generated output passes whether
+    // the flag guard exists or not, and proves nothing. This is the case the
+    // guard is actually for.
+    const day: PlanDay = {
+      label: "MON — DAY 01",
+      focus: "Full body",
+      exercises: [
+        { name: "Goblet squat", scheme: "3 × 10", rest: "60 s", isFinisher: false },
+        { name: "Circuit", scheme: "3 × 10", rest: "—", isFinisher: true },
+        {
+          name: "Heel drop",
+          scheme: "3 × 10",
+          rest: "60 s",
+          isFinisher: false,
+          isBoneLoading: true,
+        },
+      ],
+      tip: "",
+      reasons: [],
+      notes: [],
+      delay: "0s",
+    };
+    const after = autoregulated(day, autoregulate(poor, base));
+    expect(after.exercises[0].scheme).toBe("2 × 10");
+    expect(after.exercises[1].scheme, "finisher was cut").toBe("3 × 10");
+    expect(after.exercises[2].scheme, "bone work was cut").toBe("3 × 10");
+  });
+
+  it("composes with the C21 rules rather than overwriting them", () => {
+    const s = {
+      ...base,
+      menopause_stage: "peri" as const,
+      clinician_cleared_at: "2026-08-24T10:00:00Z",
+    };
+    const after = autoregulated(buildPlan(s)[0], autoregulate(poor, s));
+    // The rep range C21 moved survives; only the set count changed.
+    expect(after.exercises[0].scheme).toBe("2 × 6–8");
+    expect(after.reasons.join(" ")).toContain("perimenopausal");
+    expect(after.reasons.join(" ")).toContain("slept badly");
+  });
+
+  it("leaves a scheme it cannot parse untouched", () => {
+    expect(dropOneSet("Finisher")).toBe("Finisher");
+    expect(dropOneSet("10 → 50 reps, building weekly")).toBe(
+      "10 → 50 reps, building weekly",
+    );
+    expect(dropOneSet("1 × 8")).toBe("1 × 8");
+    expect(dropOneSet("4 × 6")).toBe("3 × 6");
   });
 });

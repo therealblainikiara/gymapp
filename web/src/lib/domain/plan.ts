@@ -231,6 +231,84 @@ export function todaysPlan(
   return days[Math.max(0, trainIdx) % days.length];
 }
 
+/**
+ * M6 / C22 — check-in autoregulation.
+ *
+ * A night of bad sleep is not a reason to skip the session; it is a reason to
+ * do a smaller one. Skipping breaks the streak, and the streak is most of what
+ * keeps someone training at 50. So a poor night drops a set and lowers the
+ * intensity target, and the day says why.
+ *
+ * **Not behind the clinician gate**, and not a condition rule. This is ordinary
+ * training sense that applies to everyone who checks in, declared or not, and
+ * routing it through `conditionProgrammingActive` would make a night of bad
+ * sleep matter only to people with a diagnosis.
+ *
+ * Sleep is the only trigger, per the M6 plan. Energy and stress are collected
+ * on the same form and are tempting to fold in, but they move for reasons that
+ * have nothing to do with recovery capacity — a stressful week is not a reason
+ * to train less, and often the opposite.
+ */
+export const POOR_SLEEP = 2;
+
+export interface Autoregulation {
+  /** Sets removed from every working set this session. */
+  setsDropped: number;
+  /** Why, phrased for the user. */
+  reason: string;
+  /** What to do about load. */
+  note: string;
+}
+
+export function autoregulate(
+  checkin: { sleep: number } | null | undefined,
+  settings: Pick<PlanSettings, "goal" | "level">,
+): Autoregulation | null {
+  if (!checkin || checkin.sleep > POOR_SLEEP) return null;
+  // `setsForLevel` floors at two, and a session of one set is not a session.
+  // Someone already at the floor gets the intensity cut and keeps their sets,
+  // which the reason says out loud rather than silently doing nothing.
+  const sets = setsForLevel(settings.goal, settings.level);
+  const setsDropped = sets > 2 ? 1 : 0;
+  return {
+    setsDropped,
+    reason: setsDropped
+      ? "You slept badly, so today is one set lighter. Turning up is the win — the plan is still here tomorrow."
+      : "You slept badly. You are already on the minimum sets, so today is the same volume at an easier load.",
+    note: "Aim to finish every set with three reps still in the tank. If the first set feels harder than that, drop the weight.",
+  };
+}
+
+/** Apply autoregulation to one day. Returns the day unchanged when it is null. */
+export function autoregulated(
+  day: PlanDay,
+  a: Autoregulation | null,
+): PlanDay {
+  if (!a) return day;
+  return {
+    ...day,
+    exercises: day.exercises.map((e) =>
+      e.isFinisher || e.isBoneLoading || !a.setsDropped
+        ? e
+        : { ...e, scheme: dropOneSet(e.scheme) },
+    ),
+    reasons: [...day.reasons, a.reason],
+    notes: [...day.notes, a.note],
+  };
+}
+
+/**
+ * "3 × 8–10" becomes "2 × 8–10". Returns the scheme untouched when it does not
+ * parse — a finisher or a bone-loading prescription has no sets to drop, and
+ * mangling the string would be worse than leaving it.
+ */
+export function dropOneSet(scheme: string): string {
+  const m = /^(\d+)( × .+)$/.exec(scheme);
+  if (!m) return scheme;
+  const sets = parseInt(m[1], 10);
+  return sets > 1 ? `${sets - 1}${m[2]}` : scheme;
+}
+
 export const PREF_TIME_LABELS: Record<string, string> = {
   morning: "07:00",
   lunch: "12:30",
