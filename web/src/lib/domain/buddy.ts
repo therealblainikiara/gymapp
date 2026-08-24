@@ -16,6 +16,65 @@ export interface BuddyAnimation {
 
 const INF = "2.4s ease-in-out infinite";
 
+/**
+ * M7 / C29 — the recovery counterpart.
+ *
+ * `buddyFor` matches on exercise-name keywords, and every recovery movement
+ * falls through its patterns to the generic "steady movement — keep breathing,
+ * stay tall". For a three-minute legs-up-the-wall that label is actively wrong:
+ * the movement is stillness. Recovery is dispatched on `kind` instead, which is
+ * data the library already carries and does not have to be guessed from a name.
+ *
+ * Still the CSS figure. C16 replaces both of these with the rigged character,
+ * and goal 5 in ECC-PLAN.md now says it must cover recovery movements too.
+ */
+export function buddyForRecovery(
+  kind: "mobility" | "stretch" | "breath" | "restore" | "drainage",
+): BuddyAnimation {
+  switch (kind) {
+    case "breath":
+      return {
+        group: "none",
+        armL: "none",
+        armR: "none",
+        legs: "none",
+        label: "Pattern: breath — nothing moves but the belly",
+      };
+    case "restore":
+      return {
+        group: "none",
+        armL: "none",
+        armR: "none",
+        legs: "none",
+        label: "Pattern: hold — settle in and stay there",
+      };
+    case "stretch":
+      return {
+        group: `bdyBob 4s ease-in-out infinite`,
+        armL: "none",
+        armR: "none",
+        legs: "none",
+        label: "Pattern: stretch — ease to the edge, then breathe",
+      };
+    case "drainage":
+      return {
+        group: "none",
+        armL: `bdySwing 3s ease-in-out infinite`,
+        armR: `bdySwingR 3s ease-in-out infinite`,
+        legs: "none",
+        label: "Pattern: drainage — light, slow, skin-deep",
+      };
+    default:
+      return {
+        group: `bdyBob ${INF}`,
+        armL: `bdySwing ${INF}`,
+        armR: `bdySwingR ${INF}`,
+        legs: "none",
+        label: "Pattern: mobility — small honest range, repeated",
+      };
+  }
+}
+
 export function buddyFor(exerciseName: string): BuddyAnimation {
   const n = exerciseName.toLowerCase();
   if (/squat|lunge|step|bridge|thruster/.test(n)) {

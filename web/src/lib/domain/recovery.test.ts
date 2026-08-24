@@ -6,6 +6,8 @@ import {
   RECOVERY_LIBRARY,
   STRETCHES,
   findRecoveryMove,
+  holdSeconds,
+  isPerSide,
   milestonesFor,
   resolveLymph,
   resolveRoutines,
@@ -18,7 +20,7 @@ import {
   MUSCLE_KEYS,
   exerciseSlug,
 } from "./exercises";
-import { removedMovementFlags } from "./conditions";
+import { movementRemovalReason, removedMovementFlags } from "./conditions";
 import type { BoneHealth } from "@/lib/types/database";
 
 const BONE: (BoneHealth | null)[] = [
@@ -246,6 +248,86 @@ describe("swapping, not dropping", () => {
     expect(milestonesFor({ bone_health: "osteopenia" }).map((m) => m.n)).toEqual(
       MILESTONES.map((m) => m.n),
     );
+  });
+});
+
+describe("dose parsing, which drives the detail timer", () => {
+  it("reads seconds and minutes out of a hold", () => {
+    expect(holdSeconds("90 s")).toBe(90);
+    expect(holdSeconds("45 s / side")).toBe(45);
+    expect(holdSeconds("3 min")).toBe(180);
+    expect(holdSeconds("1.5 min")).toBe(90);
+  });
+
+  it("returns null for a rep count, so the timer counts up instead", () => {
+    expect(holdSeconds("× 8, slow")).toBeNull();
+    expect(holdSeconds("× 10 each way")).toBeNull();
+    expect(holdSeconds("× 15 / leg")).toBeNull();
+    expect(holdSeconds("")).toBeNull();
+  });
+
+  it("does not mistake a rep count for a duration", () => {
+    // "× 8, slow" contains no unit; an over-eager regex reading the digit
+    // would start an 8-second countdown on an eight-rep movement.
+    expect(holdSeconds("× 5 / side")).toBeNull();
+    expect(holdSeconds("× 10 each way")).toBeNull();
+  });
+
+  it("spots a per-side dose", () => {
+    expect(isPerSide("45 s / side")).toBe(true);
+    expect(isPerSide("× 15 / leg")).toBe(true);
+    expect(isPerSide("90 s")).toBe(false);
+  });
+
+  it("parses every dose in every routine to something usable", () => {
+    for (const s of allSteps) {
+      const hold = holdSeconds(s.dose);
+      const reps = /[×x]\s*\d/.test(s.dose);
+      expect(
+        hold !== null || reps,
+        `${s.move}: dose "${s.dose}" is neither a hold nor a rep count`,
+      ).toBe(true);
+      if (hold !== null) {
+        expect(hold, `${s.move}: implausible hold`).toBeGreaterThan(0);
+        expect(hold, `${s.move}: implausible hold`).toBeLessThanOrEqual(600);
+      }
+    }
+  });
+});
+
+describe("detail routing", () => {
+  it("resolves every library movement from its slug", () => {
+    // The C29 accept criterion. A movement that cannot round-trip its slug has
+    // a page nobody can reach.
+    for (const m of RECOVERY_LIBRARY) {
+      const slug = exerciseSlug(m.n);
+      expect(slug, `${m.n} slugs to nothing`).toBeTruthy();
+      const back = RECOVERY_LIBRARY.find((x) => exerciseSlug(x.n) === slug);
+      expect(back?.n, `${m.n} does not round-trip`).toBe(m.n);
+    }
+  });
+
+  it("sends a withheld movement somewhere better, not to a dead end", () => {
+    const banned = removedMovementFlags({ bone_health: "osteoporosis" });
+    for (const m of RECOVERY_LIBRARY) {
+      if (!(m.contra ?? []).some((f) => banned.includes(f))) continue;
+      const reason = movementRemovalReason(m.contra ?? [], {
+        bone_health: "osteoporosis",
+      });
+      expect(reason, `${m.n} is withheld with no explanation`).toBeTruthy();
+      const replacement = m.swap ? findRecoveryMove(m.swap) : null;
+      expect(replacement, `${m.n} is withheld with nowhere to go`).toBeTruthy();
+      expect(exerciseSlug(replacement!.n)).toBeTruthy();
+    }
+  });
+
+  it("withholds nothing when nothing is declared", () => {
+    for (const m of RECOVERY_LIBRARY) {
+      expect(
+        movementRemovalReason(m.contra ?? [], { bone_health: null }),
+        `${m.n} is withheld from someone who declared nothing`,
+      ).toBeNull();
+    }
   });
 });
 

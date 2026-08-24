@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { Card, Kicker } from "@/components/ui";
 import { useProfile, useStore } from "@/lib/local/provider";
 import {
@@ -10,9 +11,19 @@ import {
   resolveRoutines,
 } from "@/lib/domain/recovery";
 import { clock } from "@/lib/domain/dates";
+import { exerciseSlug } from "@/lib/domain/exercises";
 
 /** Box breathing: 4 s per phase, 16 s per cycle. */
 const PHASES = ["INHALE", "HOLD", "EXHALE", "HOLD"];
+
+/**
+ * The detail route for a prescribed movement. The dose rides in the query
+ * string because it belongs to the routine, not to the movement (C28) — the
+ * same rock-back is eight reps here and a ninety-second hold there.
+ */
+function moveHref(m: { n: string; dose: string }) {
+  return `/recover/${exerciseSlug(m.n)}?dose=${encodeURIComponent(m.dose)}`;
+}
 
 export default function RecoverScreen({
   startBreathing,
@@ -143,18 +154,28 @@ export default function RecoverScreen({
           {breathing && (
             // The timer had no safety note at all before C28 put box breathing
             // in the library. The holds are the part that matters.
-            <span className="card-meta" style={{ margin: 0 }}>
-              {breathing.s}
-            </span>
+            <>
+              <span className="card-meta" style={{ margin: 0 }}>
+                {breathing.s}
+              </span>
+              <Link
+                href={`/recover/${exerciseSlug(breathing.n)}`}
+                className="card-meta gym-rowbtn"
+                style={{ color: "var(--color-accent-700)" }}
+              >
+                Cues and variations →
+              </Link>
+            </>
           )}
         </Card>
 
         <Card style={{ flex: "1 1 300px", padding: 16, gap: 8 }}>
           <Kicker>LYMPHATIC DRAINAGE — 12 MIN</Kicker>
           {lymph.map((step, i) => (
-            <div
+            <Link
               key={step.n}
-              title={step.c.join(" · ")}
+              href={moveHref(step)}
+              className="gym-rowbtn"
               style={{
                 display: "flex",
                 gap: 8,
@@ -173,10 +194,10 @@ export default function RecoverScreen({
               >
                 0{i + 1}
               </span>
-              <span>
+              <span style={{ color: "var(--color-accent-700)" }}>
                 {step.n} — {step.dose}
               </span>
-            </div>
+            </Link>
           ))}
           <p className="card-meta" style={{ margin: "4px 0 0" }}>
             Light pressure only — lymph sits just under the skin. Stop anything
@@ -209,20 +230,20 @@ export default function RecoverScreen({
             </span>
             <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
               {r.moves.map((m) => (
-                <span
+                <Link
                   key={m.n}
+                  href={moveHref(m)}
+                  className="gym-rowbtn"
                   title={m.c.join(" · ")}
                   style={{
                     fontSize: 12.5,
-                    opacity: 0.8,
-                    color: m.swappedFrom
-                      ? "var(--color-accent-700)"
-                      : undefined,
+                    color: "var(--color-accent-700)",
+                    padding: "1px 0",
                   }}
                 >
                   — {m.n} {m.dose}
                   {m.swappedFrom && " ✎"}
-                </span>
+                </Link>
               ))}
             </div>
           </Card>

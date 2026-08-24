@@ -1,6 +1,7 @@
 "use client";
 
-import { buddyFor } from "@/lib/domain/buddy";
+import { buddyFor, buddyForRecovery } from "@/lib/domain/buddy";
+import type { RecoveryKind } from "@/lib/domain/recovery";
 
 /**
  * The Mii-style fitness buddy that acts out the movement pattern.
@@ -9,8 +10,17 @@ import { buddyFor } from "@/lib/domain/buddy";
  * the user asked for — that is C16 in ECC-PLAN.md and explicitly out of M2.
  * Kept intact here so the port is 1:1 and C16 has something to replace.
  */
-export function FitnessBuddy({ exerciseName }: { exerciseName: string }) {
-  const b = buddyFor(exerciseName);
+export function FitnessBuddy({
+  exerciseName,
+  recoveryKind,
+}: {
+  exerciseName: string;
+  /** Set for recovery movements, which are dispatched on kind, not on name. */
+  recoveryKind?: RecoveryKind;
+}) {
+  const b = recoveryKind
+    ? buddyForRecovery(recoveryKind)
+    : buddyFor(exerciseName);
   return (
     <>
       <div

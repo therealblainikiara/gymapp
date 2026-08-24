@@ -34,7 +34,7 @@ honour. See `docs/ECC-AUDIT.md` §2 C-4.
 | M4 Devices | Simulated, disclosed in-app |
 | M5 Buddy + media | C16 10% · C17 30% · C18 15% |
 | M6 Condition-aware | **C19, C20 done** · C21–C26 open |
-| M7 Recovery parity | **C27, C28 done** — the blocking safety issue is closed · C29–C32 open |
+| M7 Recovery parity | **C27–C29 done** — the blocking safety issue is closed · C30–C32 open |
 
 ---
 
@@ -130,15 +130,49 @@ and nothing in the library is unreachable. Mutation-verified three ways —
 neutering the filter fails 4, a slug collision fails 6, an orphaned entry fails
 1.
 
-### C29 — `/recover/[slug]` detail pages
+### C29 — `/recover/[slug]` detail pages *(done)*
 
-Mirror `train/[slug]`: cues, safety note, variations, `FitnessBuddy`, media
-lookup, a hold/set timer, and the "withheld, and here is why" card from C20's
-`movementRemovalReason()`.
+Mirrors `train/[slug]`: cues, safety note, variations, `FitnessBuddy`, media
+lookup, a timer, and the withheld card. Every routine step and lymph row on
+`/recover` is now a link, as every exercise row on `/train` already was.
 
-*Accept:* every movement in the C28 library resolves from its slug; a user with
-osteoporosis visiting a flagged movement's URL sees the withheld card, not a
-prescription. Depends on C28.
+Four places it deliberately diverges, because recovery is different rather than
+lesser:
+
+*The timer counts down for a hold.* A stopwatch on a 90-second stretch asks the
+user to watch the screen and decide when to stop — the decision the dose already
+made. `holdSeconds()` reads the dose; rep-based movements still count up. A
+finished per-side countdown restarts in one tap ("Other side"), because making
+someone press Reset first is a tap that exists only because the state machine
+leaked into the UI.
+
+*The dose rides in the query string.* It belongs to the routine, not the
+movement (C28), so `/recover/quadruped-rock-back?dose=90%20s` is a hold and
+`?dose=%C3%97%208` is eight reps. A movement reached without one — bookmark,
+shared link — renders with no target rather than inventing a duration.
+
+*A withheld movement names its replacement and links to it.* The exercise page
+can only say "not in your plan"; here there is always somewhere better to send
+them.
+
+*No media lookup for drainage and breath movements.* Their names are body-part
+words — "armpit pump", "abdominal circles" — and open media libraries answer
+those with anatomy photographs and worse. The keyword filter and junk-domain
+blocklist exist because "step up" once resolved to a mass-casualty exercise
+photo; this is the same failure mode at a much higher cost, so the query is
+never made. No "Do it live" button either: the live screen counts reps, which
+means nothing for a hold.
+
+`buddyForRecovery(kind)` was added because every recovery movement fell through
+`buddyFor`'s name patterns to "steady movement — keep breathing, stay tall",
+which for a three-minute legs-up-the-wall is actively wrong: the movement is
+stillness. Dispatching on `kind` uses data the library already carries.
+
+*Accept:* met. 33 tests. Every library movement round-trips its slug; every
+withheld movement has both a reason and a resolvable replacement; nothing is
+withheld from someone who declared nothing; every dose in every routine parses
+to a plausible hold or a rep count, and a rep count is never mistaken for a
+duration.
 
 ### C30 — Recovery generator
 

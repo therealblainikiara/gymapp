@@ -235,6 +235,29 @@ export function milestonesFor(d: Pick<Declarations, "bone_health">): {
   );
 }
 
+/**
+ * Seconds to hold, read out of a dose string, or null when the dose counts
+ * reps instead.
+ *
+ * The exercise timer counts up, because a set of eight is done when it is done.
+ * Half of recovery is a stated hold — "90 s", "3 min", "45 s / side" — and a
+ * stopwatch is the wrong instrument for those: it asks the user to watch the
+ * screen and decide when to stop, which is exactly the decision the dose
+ * already made. C29's timer counts down when this returns a number.
+ */
+export function holdSeconds(dose: string): number | null {
+  const min = /(\d+(?:\.\d+)?)\s*min/i.exec(dose);
+  if (min) return Math.round(parseFloat(min[1]) * 60);
+  const sec = /(\d+)\s*s\b/i.exec(dose);
+  if (sec) return parseInt(sec[1], 10);
+  return null;
+}
+
+/** Whether a dose applies per side, so the timer should run twice. */
+export function isPerSide(dose: string): boolean {
+  return /\/\s*(side|leg|arm)/i.test(dose);
+}
+
 /** Used when the coach route is unreachable or times out. */
 export const CAM_TIPS = [
   'Knees drifted inward on the last few reps — think "push the floor apart".',
