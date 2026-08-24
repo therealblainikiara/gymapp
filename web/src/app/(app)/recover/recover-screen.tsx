@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, Kicker } from "@/components/ui";
 import { useProfile, useStore } from "@/lib/local/provider";
-import { LYMPH, STRETCHES } from "@/lib/domain/recovery";
+import { resolveLymph, resolveRoutines } from "@/lib/domain/recovery";
 import { clock } from "@/lib/domain/dates";
 
 /** Box breathing: 4 s per phase, 16 s per cycle. */
@@ -16,6 +16,22 @@ export default function RecoverScreen({
 }) {
   const store = useStore();
   const profile = useProfile();
+
+  // Every routine and every lymph step passes the same filter the workout plan
+  // does. Flagged moves are replaced in place rather than dropped, so an "8 min"
+  // routine still takes 8 minutes.
+  // Keyed on bone_health alone, which is all the filter reads — passing the
+  // whole profile would rebuild both lists on every unrelated check-in.
+  const bone = profile.bone_health;
+  const routines = useMemo(() => resolveRoutines({ bone_health: bone }), [bone]);
+  const lymph = useMemo(() => resolveLymph({ bone_health: bone }), [bone]);
+  const swapped = useMemo(
+    () =>
+      [...routines.flatMap((r) => r.moves), ...lymph].filter(
+        (m) => m.swappedFrom,
+      ),
+    [routines, lymph],
+  );
 
   // Home's "Breathing timer" tile deep-links straight into a running timer,
   // so the flag seeds the initial state rather than flipping it afterwards.
@@ -122,9 +138,10 @@ export default function RecoverScreen({
 
         <Card style={{ flex: "1 1 300px", padding: 16, gap: 8 }}>
           <Kicker>LYMPHATIC DRAINAGE — 12 MIN</Kicker>
-          {LYMPH.map((step, i) => (
+          {lymph.map((step, i) => (
             <div
-              key={step}
+              key={step.n}
+              title={step.c}
               style={{
                 display: "flex",
                 gap: 8,
@@ -143,7 +160,7 @@ export default function RecoverScreen({
               >
                 0{i + 1}
               </span>
-              <span>{step}</span>
+              <span>{step.n}</span>
             </div>
           ))}
           <p className="card-meta" style={{ margin: "4px 0 0" }}>
@@ -160,7 +177,7 @@ export default function RecoverScreen({
           gap: 18,
         }}
       >
-        {STRETCHES.map((r) => (
+        {routines.map((r) => (
           <Card key={r.n} style={{ padding: 16, gap: 8 }}>
             <div
               style={{
@@ -176,9 +193,20 @@ export default function RecoverScreen({
               {r.n}
             </span>
             <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-              {r.steps.map((s) => (
-                <span key={s} style={{ fontSize: 12.5, opacity: 0.8 }}>
-                  — {s}
+              {r.moves.map((m) => (
+                <span
+                  key={m.n}
+                  title={m.c}
+                  style={{
+                    fontSize: 12.5,
+                    opacity: 0.8,
+                    color: m.swappedFrom
+                      ? "var(--color-accent-700)"
+                      : undefined,
+                  }}
+                >
+                  — {m.n}
+                  {m.swappedFrom && " ✎"}
                 </span>
               ))}
             </div>
@@ -217,6 +245,33 @@ export default function RecoverScreen({
           </span>
         </Card>
       </div>
+
+      {swapped.length > 0 && (
+        <Card
+          className="elev-sm"
+          role="status"
+          style={{ padding: 14, gap: 8, borderColor: "var(--color-accent)" }}
+        >
+          <Kicker style={{ alignSelf: "flex-start" }}>
+            {swapped.length} MOVE{swapped.length === 1 ? "" : "S"} SWAPPED
+          </Kicker>
+          <span className="card-meta" style={{ margin: 0 }}>
+            {swapped[0].reason}
+          </span>
+          <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            {swapped.map((m) => (
+              <span key={m.n} style={{ fontSize: 12.5, opacity: 0.85 }}>
+                — <s style={{ opacity: 0.6 }}>{m.swappedFrom}</s> →{" "}
+                <span style={{ color: "var(--color-accent-700)" }}>{m.n}</span>
+              </span>
+            ))}
+          </div>
+          <span className="card-meta">
+            The swaps do the same job for the same length of time. Change your
+            declarations in Setup if any of this is out of date.
+          </span>
+        </Card>
+      )}
 
       <p className="card-meta" style={{ margin: 0 }}>
         Recovery days are scheduled around your {profile.avail_days.length}{" "}

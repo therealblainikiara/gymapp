@@ -5,7 +5,7 @@ import { Card, Kicker, toggleStyle } from "@/components/ui";
 import { useGym, useProfile, useStore } from "@/lib/local/provider";
 import { activeDaySet, scaleSpark, streakFrom, weightSpark } from "@/lib/domain/progress";
 import { bodyReadout } from "@/lib/domain/nutrition";
-import { MILESTONES } from "@/lib/domain/recovery";
+import { milestonesFor } from "@/lib/domain/recovery";
 import { weekKeys } from "@/lib/domain/dates";
 
 export default function ProgressScreen() {
@@ -272,12 +272,17 @@ export default function ProgressScreen() {
             gap: 8,
           }}
         >
-          {MILESTONES.map((t, i) => {
+          {milestonesFor(profile).map((t, i) => {
             const done = profile.mobility[i] === true;
             return (
               <button
-                key={t}
+                key={t.n}
                 type="button"
+                title={
+                  t.swappedFrom
+                    ? `Swapped from "${t.swappedFrom}" — that version bends the spine forward, which your declared bone health rules out.`
+                    : undefined
+                }
                 aria-pressed={done}
                 onClick={() => void store.toggleMilestone(i)}
                 className="btn"
@@ -297,7 +302,7 @@ export default function ProgressScreen() {
                     : toggleStyle(false)),
                 }}
               >
-                {done ? "☑" : "☐"} {t}
+                {done ? "☑" : "☐"} {t.n}
               </button>
             );
           })}

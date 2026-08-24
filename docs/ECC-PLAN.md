@@ -34,7 +34,7 @@ honour. See `docs/ECC-AUDIT.md` §2 C-4.
 | M4 Devices | Simulated, disclosed in-app |
 | M5 Buddy + media | C16 10% · C17 30% · C18 15% |
 | M6 Condition-aware | **C19, C20 done** · C21–C26 open |
-| M7 Recovery parity | **New. Next.** |
+| M7 Recovery parity | **C27 done** — the blocking safety issue is closed · C28–C32 open |
 
 ---
 
@@ -56,7 +56,7 @@ a generator driven by the profile, a movement library with cues and over-40
 safety notes, the contraindication filter, detail pages, and session logging
 that counts toward both the streak and the weekly challenge.
 
-### C27 — Stop prescribing contraindicated recovery *(safety; do first)*
+### C27 — Stop prescribing contraindicated recovery *(done)*
 
 Restructure `lib/domain/recovery.ts` so each stretch step is a record rather
 than a string: name, minutes or reps, cue, over-40 safety note, and the same
@@ -67,10 +67,30 @@ merely hidden, because a milestone that vanishes reads as a bug.
 
 Ships alone, before anything cosmetic. Nothing here depends on C28–C32.
 
-*Accept:* the same exhaustive sweep C20 uses, over routines instead of plans —
-no flagged movement survives for `bone_health = 'osteoporosis'` in any profile
-combination; the sweep is proven non-vacuous; `recovery.test.ts` exists.
-`web/src/lib/domain/`, `web/src/app/(app)/progress/page.tsx`.
+**Recovery swaps rather than drops**, which is the one design decision worth
+carrying forward. `buildPlan` picks from a pool, so removing an exercise means
+taking the next one. A stretch routine is a curated sequence with a stated
+duration — dropping a step leaves a three-move "8 min" routine that no longer
+takes 8 minutes. Every flagged move carries a `swap` that serves the same
+purpose without the mechanic, and the screen names what changed and why.
+
+The milestone fix falls out of the same idea. `profiles.mobility` is a
+`boolean[5]` with a CHECK, indexed positionally, so a flagged milestone is
+replaced *in its slot*: slot 0 means "the hamstring-length milestone", filled by
+a toe-touch for most people and a supine straight-leg raise for someone with
+declared osteoporosis. Ticks stay meaningful, the array still lines up, no
+migration.
+
+Injuries deliberately do **not** filter stretches — a flagged knee is a reason
+to load it less, not to stop moving it. Whether any individual stretch should be
+injury-gated is per-movement metadata, and belongs in C28.
+
+*Accept:* met. `recovery.test.ts` — 17 tests. The sweep asserts no flagged move
+survives for `bone_health = 'osteoporosis'` across every routine, the lymph
+sequence and the milestones; a companion asserts it is non-vacuous; others
+assert routines keep their length and `min`, milestones stay at exactly five,
+osteopenia changes nothing, and no swap is itself flagged. Mutation-verified
+twice: neutering `resolveMove` fails 3, neutering `milestonesFor` fails 1.
 
 ### C28 — Recovery movement library
 
