@@ -33,6 +33,11 @@ const BONE: (BoneHealth | null)[] = [
 
 const allSteps: RoutineStep[] = [...STRETCHES.flatMap((r) => r.steps), ...LYMPH];
 
+/** The dose a step actually renders at: its own, or the movement's. */
+function doseOf(s: RoutineStep): string {
+  return s.dose ?? findRecoveryMove(s.move)?.dose ?? "";
+}
+
 /** Every movement the screen would render for these declarations. */
 function prescribed(bone_health: BoneHealth | null) {
   return [
@@ -128,9 +133,9 @@ describe("routines reference the library", () => {
     }
   });
 
-  it("gives every step a dose", () => {
+  it("gives every step a dose, its own or the movement's", () => {
     for (const s of allSteps) {
-      expect(s.dose, `${s.move} has no dose`).toBeTruthy();
+      expect(doseOf(s), `${s.move} has no dose`).toBeTruthy();
     }
   });
 
@@ -281,11 +286,12 @@ describe("dose parsing, which drives the detail timer", () => {
 
   it("parses every dose in every routine to something usable", () => {
     for (const s of allSteps) {
-      const hold = holdSeconds(s.dose);
-      const reps = /[×x]\s*\d/.test(s.dose);
+      const dose = doseOf(s);
+      const hold = holdSeconds(dose);
+      const reps = /[×x]\s*\d/.test(dose);
       expect(
         hold !== null || reps,
-        `${s.move}: dose "${s.dose}" is neither a hold nor a rep count`,
+        `${s.move}: dose "${dose}" is neither a hold nor a rep count`,
       ).toBe(true);
       if (hold !== null) {
         expect(hold, `${s.move}: implausible hold`).toBeGreaterThan(0);

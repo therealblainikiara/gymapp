@@ -34,7 +34,7 @@ honour. See `docs/ECC-AUDIT.md` §2 C-4.
 | M4 Devices | Simulated, disclosed in-app |
 | M5 Buddy + media | C16 10% · C17 30% · C18 15% |
 | M6 Condition-aware | **C19, C20 done** · C21–C26 open |
-| M7 Recovery parity | **C27–C29 done** — the blocking safety issue is closed · C30–C32 open |
+| M7 Recovery parity | **C27–C30 done** — the blocking safety issue is closed · C31, C32 open |
 
 ---
 
@@ -174,16 +174,58 @@ withheld from someone who declared nothing; every dose in every routine parses
 to a plausible hold or a rep count, and a rep count is never mistaken for a
 duration.
 
-### C30 — Recovery generator
+### C30 — Recovery generator *(done)*
 
-`buildRecovery(profile)` alongside `buildPlan(profile)`, and it must be the same
-kind of function: pure, profile-driven, filtered. Session length and level scale
-the routine; `avail_days` places recovery days against training days instead of
-describing them in a closing sentence; declarations shape content.
+`buildRecovery(settings)` in `lib/domain/recovery-plan.ts`, the same kind of
+function as `buildPlan`: pure, profile-driven, filtered. Recovery days are the
+days `avail_days` leaves free — the closing sentence made real. `session_len`
+and `level` set a movement budget. The C27 filter runs over generated output,
+and every substitution is reported on the day carrying it.
 
-*Accept:* two profiles differing only in `session_len` get different routines;
-the sweep from C27 still passes over generated output rather than fixed
-routines. Depends on C27, C28.
+**The three hand-written routines are kept as templates, not discarded.** They
+are user-approved prototype content and the only place the sequencing was
+thought about; a generator that threw them away to prove it could would be worse
+at the job. Short of budget they top up from the library, over budget they trim.
+
+**Doses are not scaled.** A 45-second doorway stretch is 45 seconds whether you
+have ten minutes or an hour. Length changes the count.
+
+Four defects this chunk found and fixed, three of them only visible by printing
+real output rather than reading assertions:
+
+*The swap carried the wrong dose.* Since C27 the step's dose was carried onto
+the replacement unconditionally, so declaring osteoporosis and opening Evening
+unwind prescribed "90/90 breathing — 60 s / side", a breath drill with a side.
+Movements now carry their own dose (the generator needs one anyway) and a step's
+dose is an override that wins only when the routine deliberately set it.
+
+*The reason said "Not in your plan" beside the replacement.* Correct on the
+detail page, wrong on a card showing what took its place.
+`movementSwapReason()` splits off the shared core.
+
+*One reason line covered swaps with different mechanisms.* Three swaps under
+"bends the spine forward" is wrong about the rotation one. Grouped by
+explanation now.
+
+*Pelvic floor got handed the braced breath drill first.* Leading with breath
+work, then offering `Box breathing` — whose holds are the one thing in that
+group raising intra-abdominal pressure — is backwards. The day rotation was
+being applied after the preference sort and stepping past it; it now rotates
+first and varies only within each tier.
+
+Pelvic floor reorders and removes nothing, deliberately: no impact work exists
+here for C21's rule to bite on, and ordering is the honest strength of claim.
+
+*Known trade-off:* trimming takes from the end, so a 10-minute Evening unwind
+loses "Legs up the wall", its signature movement. Priority within a template is
+C32's problem, not a reason to hold C30.
+
+*Accept:* met. 23 tests. Movement count rises with `session_len` and hits the
+budget exactly for all 15 length × level combinations; the C27 sweep passes over
+generated output across lengths, levels, four `avail_days` shapes and both
+pelvic-floor states, with a non-vacuity guard. Mutation-verified three ways —
+bypassing the filter in the top-up fails 1, a fixed budget fails 3, ignoring
+training days fails 3.
 
 ### C31 — Log a recovery session
 

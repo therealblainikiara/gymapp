@@ -10,6 +10,7 @@ import {
   offersMenopauseQuestion,
   offersPelvicFloorQuestion,
   movementRemovalReason,
+  movementSwapReason,
   removedMovementFlags,
 } from "./conditions";
 
@@ -145,6 +146,23 @@ describe("movement removals", () => {
     ).toContain("twists the spine");
   });
 
+  it("drops the not-in-your-plan clause where a replacement is shown", () => {
+    // Recovery substitutes rather than withholds, so telling someone a movement
+    // is absent while showing them what took its place reads as a bug.
+    const swap = movementSwapReason(["spinal_flexion"], {
+      bone_health: "osteoporosis",
+    });
+    expect(swap).toContain("osteoporosis");
+    expect(swap).toContain("bends the spine forward");
+    expect(swap).not.toContain("Not in your plan");
+    // Both sentences come off one core, so they cannot drift apart.
+    expect(
+      movementRemovalReason(["spinal_flexion"], {
+        bone_health: "osteoporosis",
+      }),
+    ).toContain(swap!);
+  });
+
   it("says nothing about a movement that was never withheld", () => {
     expect(
       movementRemovalReason(["overhead", "valsalva"], {
@@ -155,6 +173,8 @@ describe("movement removals", () => {
       movementRemovalReason(["spinal_flexion"], { bone_health: "osteopenia" }),
     ).toBeNull();
     expect(movementRemovalReason([], { bone_health: null })).toBeNull();
+    expect(movementSwapReason(["overhead"], { bone_health: "osteoporosis" }))
+      .toBeNull();
   });
 
   it("does not wait for clinician clearance", () => {

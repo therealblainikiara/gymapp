@@ -47,8 +47,15 @@ export type RecoveryKind =
   | "drainage";
 
 export interface RecoveryMove {
-  /** Name only — the dose belongs to the routine that prescribes it. */
+  /** Name only — never the dose. */
   n: string;
+  /**
+   * The dose this movement is normally done at. A routine may override it —
+   * `Quadruped rock-back` is eight reps in the morning flow and a ninety-second
+   * hold in the evening — but a generated session (C30) has no hand-written
+   * routine to read one from, so every movement has to know its own.
+   */
+  dose: string;
   kind: RecoveryKind;
   /** Household items needed. Empty means nothing but the floor. */
   props: string[];
@@ -67,6 +74,7 @@ export const RECOVERY_LIBRARY: RecoveryMove[] = [
   // ── Mobility ──────────────────────────────────────────────────────────────
   {
     n: "Cat–cow",
+    dose: "× 8, slow",
     kind: "mobility",
     props: [],
     av: ["wrist", "back"],
@@ -87,6 +95,7 @@ export const RECOVERY_LIBRARY: RecoveryMove[] = [
   },
   {
     n: "Quadruped rock-back",
+    dose: "× 8",
     kind: "mobility",
     props: [],
     av: ["wrist", "knee"],
@@ -101,6 +110,7 @@ export const RECOVERY_LIBRARY: RecoveryMove[] = [
   },
   {
     n: "Hip circles",
+    dose: "× 10 each way",
     kind: "mobility",
     props: ["wall or chair for balance"],
     av: ["knee"],
@@ -115,6 +125,7 @@ export const RECOVERY_LIBRARY: RecoveryMove[] = [
   },
   {
     n: "World's greatest stretch",
+    dose: "× 5 / side",
     kind: "mobility",
     props: [],
     av: ["knee", "back"],
@@ -131,6 +142,7 @@ export const RECOVERY_LIBRARY: RecoveryMove[] = [
   },
   {
     n: "Half-kneeling hip flexor stretch",
+    dose: "× 5 / side",
     kind: "stretch",
     props: ["cushion for the knee"],
     av: ["knee"],
@@ -145,6 +157,7 @@ export const RECOVERY_LIBRARY: RecoveryMove[] = [
   },
   {
     n: "Chin tuck",
+    dose: "× 10",
     kind: "mobility",
     props: [],
     av: [],
@@ -159,6 +172,7 @@ export const RECOVERY_LIBRARY: RecoveryMove[] = [
   },
   {
     n: "Thoracic rotation",
+    dose: "× 8 / side",
     kind: "mobility",
     props: [],
     av: ["back", "shoulder"],
@@ -175,6 +189,7 @@ export const RECOVERY_LIBRARY: RecoveryMove[] = [
   },
   {
     n: "Wall angel",
+    dose: "× 8",
     kind: "mobility",
     props: ["wall"],
     av: ["shoulder"],
@@ -189,6 +204,7 @@ export const RECOVERY_LIBRARY: RecoveryMove[] = [
   },
   {
     n: "Wrist and finger opener",
+    dose: "60 s",
     kind: "stretch",
     props: [],
     av: ["wrist"],
@@ -205,6 +221,7 @@ export const RECOVERY_LIBRARY: RecoveryMove[] = [
   // ── Stretch ───────────────────────────────────────────────────────────────
   {
     n: "Standing hamstring reach",
+    dose: "× 8",
     kind: "stretch",
     props: [],
     av: ["back", "knee"],
@@ -221,6 +238,7 @@ export const RECOVERY_LIBRARY: RecoveryMove[] = [
   },
   {
     n: "Supine hamstring stretch",
+    dose: "30 s / side",
     kind: "stretch",
     props: ["towel or strap"],
     av: ["knee"],
@@ -235,6 +253,7 @@ export const RECOVERY_LIBRARY: RecoveryMove[] = [
   },
   {
     n: "Doorway chest stretch",
+    dose: "45 s / side",
     kind: "stretch",
     props: ["doorway"],
     av: ["shoulder"],
@@ -249,6 +268,7 @@ export const RECOVERY_LIBRARY: RecoveryMove[] = [
   },
   {
     n: "Child's pose",
+    dose: "90 s",
     kind: "stretch",
     props: ["cushion"],
     av: ["knee", "back"],
@@ -267,6 +287,7 @@ export const RECOVERY_LIBRARY: RecoveryMove[] = [
   },
   {
     n: "Figure-4 stretch",
+    dose: "60 s / side",
     kind: "stretch",
     props: [],
     av: ["knee"],
@@ -281,6 +302,7 @@ export const RECOVERY_LIBRARY: RecoveryMove[] = [
   },
   {
     n: "Supine twist",
+    dose: "60 s / side",
     kind: "stretch",
     props: ["cushion"],
     av: ["back"],
@@ -297,6 +319,7 @@ export const RECOVERY_LIBRARY: RecoveryMove[] = [
   },
   {
     n: "Legs up the wall",
+    dose: "3 min",
     kind: "restore",
     props: ["wall"],
     av: [],
@@ -313,6 +336,7 @@ export const RECOVERY_LIBRARY: RecoveryMove[] = [
   // ── Breath ────────────────────────────────────────────────────────────────
   {
     n: "Box breathing",
+    dose: "5 min",
     kind: "breath",
     props: [],
     av: [],
@@ -330,6 +354,7 @@ export const RECOVERY_LIBRARY: RecoveryMove[] = [
   },
   {
     n: "90/90 breathing",
+    dose: "90 s",
     kind: "breath",
     props: ["chair"],
     av: [],
@@ -344,6 +369,7 @@ export const RECOVERY_LIBRARY: RecoveryMove[] = [
   },
   {
     n: "Deep belly breathing",
+    dose: "× 10",
     kind: "breath",
     props: [],
     av: [],
@@ -360,6 +386,7 @@ export const RECOVERY_LIBRARY: RecoveryMove[] = [
   // ── Drainage ──────────────────────────────────────────────────────────────
   {
     n: "Neck drainage strokes",
+    dose: "× 10 / side",
     kind: "drainage",
     props: [],
     av: [],
@@ -374,6 +401,7 @@ export const RECOVERY_LIBRARY: RecoveryMove[] = [
   },
   {
     n: "Armpit pump",
+    dose: "× 15",
     kind: "drainage",
     props: [],
     av: ["shoulder"],
@@ -388,6 +416,7 @@ export const RECOVERY_LIBRARY: RecoveryMove[] = [
   },
   {
     n: "Abdominal circles",
+    dose: "× 10",
     kind: "drainage",
     props: [],
     av: [],
@@ -402,6 +431,7 @@ export const RECOVERY_LIBRARY: RecoveryMove[] = [
   },
   {
     n: "Ankle pumps and calf strokes",
+    dose: "× 15 / leg",
     kind: "drainage",
     props: [],
     av: [],

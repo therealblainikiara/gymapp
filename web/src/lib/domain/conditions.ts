@@ -199,15 +199,30 @@ export function movementRemovalReason(
   flags: MovementFlag[],
   d: Pick<Declarations, "bone_health">,
 ): string | null {
+  const why = movementSwapReason(flags, d);
+  return why && `Not in your plan. ${why} Ask your clinician before you add it back.`;
+}
+
+/**
+ * The same explanation without "not in your plan".
+ *
+ * Recovery substitutes rather than withholds (C27), so on a recovery card the
+ * movement *is* in the plan — a replacement for it is right there. Telling
+ * someone a thing is absent while showing them what took its place reads as a
+ * bug, so the two surfaces get two sentences off one core.
+ */
+export function movementSwapReason(
+  flags: MovementFlag[],
+  d: Pick<Declarations, "bone_health">,
+): string | null {
   const hit = removedMovementFlags(d).filter((f) => flags.includes(f));
   if (!hit.length) return null;
   const mechanic = hit.includes("spinal_flexion")
     ? "bends the spine forward"
     : "twists the spine to end range";
   return (
-    `Not in your plan. You told us you have osteoporosis, and this movement ` +
-    `${mechanic} — the pattern most associated with vertebral fracture. ` +
-    `Ask your clinician before you add it back.`
+    `You told us you have osteoporosis, and this movement ${mechanic} — ` +
+    `the pattern most associated with vertebral fracture.`
   );
 }
 

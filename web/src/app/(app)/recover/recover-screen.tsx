@@ -8,8 +8,8 @@ import {
   BREATHING_MOVE,
   findRecoveryMove,
   resolveLymph,
-  resolveRoutines,
 } from "@/lib/domain/recovery";
+import { buildRecovery } from "@/lib/domain/recovery-plan";
 import { clock } from "@/lib/domain/dates";
 import { exerciseSlug } from "@/lib/domain/exercises";
 
@@ -33,21 +33,35 @@ export default function RecoverScreen({
   const store = useStore();
   const profile = useProfile();
 
-  // Every routine and every lymph step passes the same filter the workout plan
-  // does. Flagged moves are replaced in place rather than dropped, so an "8 min"
-  // routine still takes 8 minutes.
-  // Keyed on bone_health alone, which is all the filter reads — passing the
-  // whole profile would rebuild both lists on every unrelated check-in.
+  // Sessions are generated from the profile and placed on the days training
+  // leaves free (C30); every movement in them passes the same filter the
+  // workout plan does, replacing rather than dropping. Both hooks are keyed on
+  // the fields that actually feed them, so an unrelated check-in does not
+  // rebuild the week.
   const bone = profile.bone_health;
-  const routines = useMemo(() => resolveRoutines({ bone_health: bone }), [bone]);
+  const days = useMemo(
+    () =>
+      buildRecovery({
+        bone_health: profile.bone_health,
+        pelvic_floor: profile.pelvic_floor,
+        session_len: profile.session_len,
+        level: profile.level,
+        avail_days: profile.avail_days,
+      }),
+    [
+      profile.bone_health,
+      profile.pelvic_floor,
+      profile.session_len,
+      profile.level,
+      profile.avail_days,
+    ],
+  );
   const lymph = useMemo(() => resolveLymph({ bone_health: bone }), [bone]);
   const breathing = findRecoveryMove(BREATHING_MOVE);
   const swapped = useMemo(
     () =>
-      [...routines.flatMap((r) => r.moves), ...lymph].filter(
-        (m) => m.swappedFrom,
-      ),
-    [routines, lymph],
+      [...days.flatMap((d) => d.moves), ...lymph].filter((m) => m.swappedFrom),
+    [days, lymph],
   );
 
   // Home's "Breathing timer" tile deep-links straight into a running timer,
@@ -213,8 +227,11 @@ export default function RecoverScreen({
           gap: 18,
         }}
       >
-        {routines.map((r) => (
-          <Card key={r.n} style={{ padding: 16, gap: 8 }}>
+        {days.map((d) => (
+          <Card
+            key={d.label}
+            style={{ padding: 16, gap: 8, animation: `fadeUp .4s ${d.delay} both` }}
+          >
             <div
               style={{
                 display: "flex",
@@ -222,14 +239,17 @@ export default function RecoverScreen({
                 alignItems: "center",
               }}
             >
-              <Kicker>STRETCH ROUTINE</Kicker>
-              <span className="tag tag-neutral">{r.min} MIN</span>
+              <Kicker style={{ fontSize: 11 }}>{d.label}</Kicker>
+              <span className="tag tag-neutral">≈ {d.minutes} MIN</span>
             </div>
             <span className="card-title" style={{ fontSize: 17 }}>
-              {r.n}
+              {d.routine}
+            </span>
+            <span className="card-meta" style={{ margin: 0 }}>
+              {d.focus}
             </span>
             <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-              {r.moves.map((m) => (
+              {d.moves.map((m) => (
                 <Link
                   key={m.n}
                   href={moveHref(m)}
@@ -246,6 +266,14 @@ export default function RecoverScreen({
                 </Link>
               ))}
             </div>
+            {d.reasons.map((r) => (
+              <span key={r} className="card-meta" style={{ margin: 0 }}>
+                {r}
+              </span>
+            ))}
+            <p className="card-meta" style={{ margin: 0 }}>
+              {d.tip}
+            </p>
           </Card>
         ))}
 
@@ -310,8 +338,9 @@ export default function RecoverScreen({
       )}
 
       <p className="card-meta" style={{ margin: 0 }}>
-        Recovery days are scheduled around your {profile.avail_days.length}{" "}
-        training day(s). Rest is part of the plan, not a gap in it.
+        {days.length} recovery day(s), placed on the days your{" "}
+        {profile.avail_days.length} training day(s) leave free. Rest is part of
+        the plan, not a gap in it. Minute totals are estimates from the doses.
       </p>
     </div>
   );

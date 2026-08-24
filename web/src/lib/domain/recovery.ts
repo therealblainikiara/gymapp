@@ -1,5 +1,5 @@
 import type { MovementFlag } from "./exercises";
-import { movementRemovalReason, removedMovementFlags } from "./conditions";
+import { movementSwapReason, removedMovementFlags } from "./conditions";
 import type { Declarations } from "./conditions";
 import { findRecoveryMove, type RecoveryMove } from "./recovery-library";
 
@@ -42,10 +42,21 @@ export {
  * "8 min" routine that no longer takes 8 minutes.
  */
 
-/** One line of a routine: which movement, and how much of it. */
+/**
+ * One line of a routine: which movement, and — only when it differs from the
+ * movement's own dose — how much of it.
+ *
+ * An explicit dose is a statement that *this duration is the point*, and it is
+ * what carries onto a replacement when a declaration forces a swap. Without one
+ * the replacement uses its own dose, which is almost always what you want:
+ * `Standing hamstring reach × 8` swapping to `Supine hamstring stretch` should
+ * become "30 s / side", not "× 8". Before C30 the step's dose was carried
+ * unconditionally, so someone with declared osteoporosis opening Evening unwind
+ * was told to do "90/90 breathing — 60 s / side", a breath drill with a side.
+ */
 export interface RoutineStep {
   move: string;
-  dose: string;
+  dose?: string;
 }
 
 export interface StretchRoutine {
@@ -59,30 +70,35 @@ export const STRETCHES: StretchRoutine[] = [
     n: "Morning mobility flow",
     min: 8,
     steps: [
-      { move: "Cat–cow", dose: "× 8, slow" },
-      { move: "Hip circles", dose: "× 10 each way" },
-      { move: "World's greatest stretch", dose: "× 5 / side" },
-      { move: "Standing hamstring reach", dose: "× 8" },
+      { move: "Cat–cow" },
+      { move: "Hip circles" },
+      { move: "World's greatest stretch" },
+      { move: "Standing hamstring reach" },
     ],
   },
   {
     n: "Desk reset — express",
     min: 10,
     steps: [
-      { move: "Chin tuck", dose: "× 10" },
-      { move: "Doorway chest stretch", dose: "45 s / side" },
-      { move: "Thoracic rotation", dose: "× 8 / side" },
-      { move: "Wrist and finger opener", dose: "60 s" },
+      { move: "Chin tuck" },
+      { move: "Doorway chest stretch" },
+      { move: "Thoracic rotation" },
+      { move: "Wrist and finger opener" },
     ],
   },
   {
     n: "Evening unwind",
     min: 12,
     steps: [
+      // The 90 s is spelled out even though it matches the movement's own
+      // dose: this routine is about settling, so the duration is the point and
+      // must survive onto the neutral-spine replacement.
       { move: "Child's pose", dose: "90 s" },
-      { move: "Figure-4 stretch", dose: "60 s / side" },
-      { move: "Supine twist", dose: "60 s / side" },
-      { move: "Legs up the wall", dose: "3 min" },
+      { move: "Figure-4 stretch" },
+      // Deliberately not pinned — the twist swaps to a breath drill, which has
+      // no sides, and "90/90 breathing — 60 s / side" is nonsense.
+      { move: "Supine twist" },
+      { move: "Legs up the wall" },
     ],
   },
 ];
@@ -93,10 +109,10 @@ export const STRETCHES: StretchRoutine[] = [
  */
 export const LYMPH: RoutineStep[] = [
   { move: "Deep belly breathing", dose: "× 10 — opens the system" },
-  { move: "Neck drainage strokes", dose: "× 10 / side" },
-  { move: "Armpit pump", dose: "× 15" },
-  { move: "Abdominal circles", dose: "× 10" },
-  { move: "Ankle pumps and calf strokes", dose: "× 15 / leg" },
+  { move: "Neck drainage strokes" },
+  { move: "Armpit pump" },
+  { move: "Abdominal circles" },
+  { move: "Ankle pumps and calf strokes" },
 ];
 
 /** The breathing timer on the Recover screen. Its copy comes from the library. */
@@ -187,7 +203,9 @@ export function resolveStep(
 ): ResolvedMove {
   const move = findRecoveryMove(step.move);
   if (!move) throw new Error(`Unknown recovery movement: ${step.move}`);
-  if (!ruledOut(move, d) || !move.swap) return { ...move, dose: step.dose };
+  if (!ruledOut(move, d) || !move.swap) {
+    return { ...move, dose: step.dose ?? move.dose };
+  }
 
   const replacement = findRecoveryMove(move.swap);
   if (!replacement) {
@@ -195,9 +213,12 @@ export function resolveStep(
   }
   return {
     ...replacement,
-    dose: step.dose,
+    // The routine's explicit dose wins; otherwise the replacement's own.
+    dose: step.dose ?? replacement.dose,
     swappedFrom: move.n,
-    reason: movementRemovalReason(flagsOf(move), d) ?? undefined,
+    // The swap phrasing, not the withheld phrasing: the movement is in the
+    // plan, and its replacement is right there on the same line.
+    reason: movementSwapReason(flagsOf(move), d) ?? undefined,
   };
 }
 
