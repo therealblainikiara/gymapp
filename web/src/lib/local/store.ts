@@ -514,6 +514,15 @@ export class GymStore {
     return this.addEvent({ type: "Workout", minutes });
   }
 
+  /**
+   * Log a completed recovery session. Same path as a workout, deliberately:
+   * Recovery having no "done ✓" while Train had one was the clearest signal in
+   * the product that it was the optional half.
+   */
+  logRecovery(minutes: number) {
+    return this.addEvent({ type: "Mobility", minutes });
+  }
+
   async requestFriend(addressee: string) {
     if (!this.db) return;
     const row: FriendshipRow = {

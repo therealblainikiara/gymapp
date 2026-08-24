@@ -50,6 +50,16 @@ describe("streak", () => {
   });
 });
 
+describe("C31 — a logged recovery session counts", () => {
+  it("feeds the streak like any other event", () => {
+    // activeDaySet takes event dates with no type filter, which is what makes
+    // "Mark session done ✓" on Recovery worth anything. A well-meaning
+    // `filter(e => e.type === "Workout")` added later would silently undo it.
+    const days = activeDaySet([], ["2026-08-24", "2026-08-23"]);
+    expect(streakFrom(days, new Date("2026-08-24T12:00:00"))).toBe(2);
+  });
+});
+
 describe("week", () => {
   it("starts on Sunday", () => {
     // The user chose a Sunday week start; every weekly total depends on it.

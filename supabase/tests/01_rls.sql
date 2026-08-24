@@ -41,6 +41,25 @@ begin
 end
 $$;
 
+-- Asserts that `sql` fails a CHECK constraint. Distinct from assert_denied:
+-- a rejected value and a refused permission are different failures, and a
+-- helper that accepted either would let a broken constraint pass as long as
+-- the row happened to be unwritable for some unrelated reason.
+create function assert_rejected(sql text, msg text) returns void
+  language plpgsql as $$
+begin
+  begin
+    execute sql;
+  exception
+    when check_violation then return;
+    when others then
+      raise exception 'ASSERTION FAILED: % (expected a CHECK violation, got %: %)',
+        msg, sqlstate, sqlerrm;
+  end;
+  raise exception 'ASSERTION FAILED: % (the value was accepted)', msg;
+end
+$$;
+
 -- ── fixtures, written as superuser so RLS does not gate the seed ────────────
 insert into auth.users (id, email) values
   ('11111111-1111-1111-1111-111111111111', 'alice@example.test'),
@@ -105,6 +124,25 @@ select assert((select count(*) from gymapp.weekly_active_minutes) = 1,
 select assert(
   (select week_start from gymapp.weekly_active_minutes limit 1) = date '2026-08-23',
   'weekly_active_minutes: Monday 2026-08-24 belongs to the Sunday 2026-08-23 week');
+
+-- M7 / C31 — a recovery session is loggable, and it counts.
+insert into gymapp.events (user_id, date, type, minutes) values
+  ('11111111-1111-1111-1111-111111111111', date '2026-08-24', 'Mobility', 12);
+select assert((select count(*) from gymapp.events where type = 'Mobility') = 1,
+  'events: the CHECK must accept a Mobility session');
+select assert(
+  (select minutes from gymapp.weekly_active_minutes limit 1) = 42,
+  'weekly_active_minutes: a Mobility session must count toward the weekly '
+  'challenge — the view applies no type filter, and that is the decision');
+
+-- ...but the CHECK is still a whitelist, not a suggestion.
+select assert_rejected(
+  $q$insert into gymapp.events (user_id, date, type, minutes)
+     values ('11111111-1111-1111-1111-111111111111', date '2026-08-24',
+             'Stretching', 12)$q$,
+  'events: widening the type CHECK must not turn it into anything-goes');
+
+delete from gymapp.events where type = 'Mobility';
 
 -- writes are scoped to the caller
 select assert_denied(

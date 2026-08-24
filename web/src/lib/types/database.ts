@@ -33,7 +33,10 @@ export type EventType =
   | "Swim"
   | "Squash"
   | "Tennis"
-  | "Other sport";
+  | "Other sport"
+  // M7 / C31. Counts toward the streak and toward the weekly challenge —
+  // `weekly_active_minutes` applies no type filter, which was the decision.
+  | "Mobility";
 export type EventSource = "manual" | "app" | "health_connect" | "healthkit";
 export type FriendshipStatus = "pending" | "accepted" | "blocked";
 

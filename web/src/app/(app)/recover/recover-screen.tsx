@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Card, Kicker } from "@/components/ui";
-import { useProfile, useStore } from "@/lib/local/provider";
+import { useGym, useProfile, useStore } from "@/lib/local/provider";
 import {
   BREATHING_MOVE,
   findRecoveryMove,
@@ -32,6 +32,7 @@ export default function RecoverScreen({
 }) {
   const store = useStore();
   const profile = useProfile();
+  const { status } = useGym();
 
   // Sessions are generated from the profile and placed on the days training
   // leaves free (C30); every movement in them passes the same filter the
@@ -274,6 +275,15 @@ export default function RecoverScreen({
             <p className="card-meta" style={{ margin: 0 }}>
               {d.tip}
             </p>
+            <button
+              type="button"
+              onClick={() => void store.logRecovery(d.minutes)}
+              disabled={status === "loading"}
+              className="btn btn-secondary"
+              style={{ fontSize: 12.5, padding: "5px 10px" }}
+            >
+              Mark session done ✓
+            </button>
           </Card>
         ))}
 

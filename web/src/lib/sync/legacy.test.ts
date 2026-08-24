@@ -173,6 +173,19 @@ describe("legacy import hardens against a corrupt blob", () => {
     expect(r.dropped).toMatchObject({ checkins: 1, weights: 1, events: 1 });
   });
 
+  it("keeps a Mobility session rather than rewriting it as Other sport", () => {
+    // C31 added "Mobility" to EventType and to the database CHECK. The import
+    // whitelist here is a Record so the compiler catches that kind of drift,
+    // but the compiler cannot see the consequence: a stale whitelist rewrites
+    // every recovery session someone logged into "Other sport".
+    const r = planLegacyImport(
+      { events: [{ date: "2026-08-24", type: "Mobility", min: 12 }] },
+      USER,
+      newId,
+    );
+    expect(r.events.map((e) => e.type)).toEqual(["Mobility"]);
+  });
+
   it("keeps only the last weigh-in for a date, since the key is (user, date)", () => {
     const r = planLegacyImport(
       {

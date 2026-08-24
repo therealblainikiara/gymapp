@@ -157,6 +157,56 @@ feature is off for this project. If it is ever turned on, these policies need
 an explicit `auth.jwt() ->> 'is_anonymous' = 'false'` check as well — noted in
 the migration itself.
 
+## `20260823180000_backfill_profiles.sql`
+
+Applied. The signup trigger creates a `gymapp.profiles` row for every new auth
+user, but three accounts predated it, and a zero-row `UPDATE` is not an error in
+PostgREST — so the client believed it had saved the disclaimer acceptance,
+navigated on, and the proxy bounced it straight back. An infinite redirect loop
+that looked like an auth bug and was a missing row.
+
+Backfills a profile for any `auth.users` row without one. Deliberately leaves
+`disclaimer_accepted_at` and `intake_completed_at` null: those are consent and
+answers, and inventing them to smooth a redirect would be the wrong fix twice.
+
+## `20260823190000_condition_profile.sql`
+
+Applied as `gymapp_condition_profile`. M6 / C19 — the health declarations.
+
+| Table | Added |
+|---|---|
+| `profiles` | `menopause_stage`, `bone_health`, `pelvic_floor`, `conditions[]`, `clinician_cleared_at` |
+| `checkins` | `flushes`, `mood` |
+| `weights` | `waist_cm` |
+
+Purely additive and every column nullable with no default, so existing rows stay
+valid and "not asked" stays distinguishable from an answered "none" — which
+matters, because `bone_health = 'untested'` and `bone_health = 'none'` lead to
+different programming.
+
+`conditions` is a `text[]` with a `<@` containment CHECK rather than an enum:
+the set will grow with each age band, and adding a value to an enum is a
+migration while adding one to an array constraint is a one-line CHECK swap.
+
+## `20260824120000_mobility_event_type.sql`
+
+Applied as `gymapp_mobility_event_type`. M7 / C31 — a recovery session is a
+thing you can log.
+
+`events.type` gains `'Mobility'`. Nothing else changes, and that is the
+substance of it: `gymapp.weekly_active_minutes` sums every event's minutes with
+no type filter, so a logged mobility session counts toward the daily streak
+**and** toward the 150-minute weekly challenge.
+
+That was the user's explicit decision over the alternative of excluding it, and
+the trade-off is worth writing down rather than discovering later: someone can
+now reach 150 "active minutes" a week entirely on stretching. Judged the right
+way round, because a challenge that refuses to count recovery teaches people
+that recovery does not count.
+
+Widening a CHECK cannot invalidate an existing row, so this is safe to apply to
+a live table before the application code that writes the new value.
+
 ## Unchanged
 
 Table and column names, types, defaults and the Sunday-week arithmetic

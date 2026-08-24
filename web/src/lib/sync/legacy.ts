@@ -50,16 +50,25 @@ const MUSCLES: MuscleKey[] = [
 ];
 const DIETARY: DietaryKey[] = ["veg", "lf", "gf", "nf"];
 const INJURIES: InjuryKey[] = ["knee", "shoulder", "back", "wrist"];
-const EVENT_TYPES: EventType[] = [
-  "Workout",
-  "Walk",
-  "Ride",
-  "Run",
-  "Swim",
-  "Squash",
-  "Tennis",
-  "Other sport",
-];
+/**
+ * The event types an import may keep, as a Record rather than an array so the
+ * compiler refuses to build if `EventType` gains a member and this is not
+ * updated. It nearly went stale the first time it mattered: C31 added
+ * "Mobility" to the union and the database CHECK, and an array here would have
+ * silently rewritten every imported mobility session as "Other sport".
+ */
+const EVENT_TYPE_SET: Record<EventType, true> = {
+  Workout: true,
+  Walk: true,
+  Ride: true,
+  Run: true,
+  Swim: true,
+  Squash: true,
+  Tennis: true,
+  "Other sport": true,
+  Mobility: true,
+};
+const EVENT_TYPES = Object.keys(EVENT_TYPE_SET) as EventType[];
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 

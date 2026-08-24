@@ -34,7 +34,7 @@ honour. See `docs/ECC-AUDIT.md` §2 C-4.
 | M4 Devices | Simulated, disclosed in-app |
 | M5 Buddy + media | C16 10% · C17 30% · C18 15% |
 | M6 Condition-aware | **C19, C20 done** · C21–C26 open |
-| M7 Recovery parity | **C27–C30 done** — the blocking safety issue is closed · C31, C32 open |
+| M7 Recovery parity | **C27–C31 done** — the blocking safety issue is closed · C32 open |
 
 ---
 
@@ -227,17 +227,35 @@ pelvic-floor states, with a non-vacuity guard. Mutation-verified three ways —
 bypassing the filter in the top-up fails 1, a fixed budget fails 3, ignoring
 training days fails 3.
 
-### C31 — Log a recovery session
+### C31 — Log a recovery session *(done)*
 
-Add `'Mobility'` to the `events.type` CHECK. It flows into
-`weekly_active_minutes` unchanged, so a logged stretch counts toward the streak
-**and** the 150-minute weekly challenge — decided this session. Add the "Mark
-session done ✓" button Recovery has never had.
+`'Mobility'` added to the `events.type` CHECK, applied to the hosted project as
+`gymapp_mobility_event_type` after the full migration set and RLS suite passed
+against a scratch Postgres. It flows into `weekly_active_minutes` unchanged, so
+a logged stretch counts toward the streak **and** the 150-minute challenge.
+Every generated session card now carries "Mark session done ✓", logging its own
+estimated minutes.
 
-*Accept:* migration verified against local Postgres before it goes near the
-hosted project; a logged mobility session moves the streak and the challenge
-bar; the outbox round-trips it. Touches `supabase/migrations/`, the events type
-union, and `docs/M2-SCHEMA-CHANGELOG.md`.
+The trade-off is recorded in the migration and the changelog rather than left to
+be discovered: someone can now reach 150 "active minutes" a week entirely on
+stretching. That is the right way round — a challenge that refuses to count
+recovery teaches people recovery does not count.
+
+Two things this turned up beyond the chunk. `lib/sync/legacy.ts` held the import
+whitelist as an array, so a stale copy would have silently rewritten every
+imported mobility session as "Other sport"; it is now a `Record<EventType,
+true>` and the compiler refuses to build when the union grows. And the RLS suite
+gained `assert_rejected` alongside `assert_denied` — a rejected value and a
+refused permission are different failures, and one helper accepting either would
+let a broken constraint pass whenever the row happened to be unwritable for an
+unrelated reason.
+
+*Accept:* met. Verified locally before the hosted project, and the constraint
+read back from live. Four new assertions in the RLS suite: the CHECK accepts
+`Mobility`, the weekly view counts it, the CHECK still rejects an unknown value,
+and the streak counts a mobility date. Mutation-verified twice — not widening
+the CHECK fails the insert, filtering `Mobility` out of the view fails the
+assertion by name.
 
 ### C32 — A pure stretching section
 
