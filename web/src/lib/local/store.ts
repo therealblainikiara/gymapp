@@ -76,6 +76,13 @@ export function defaultProfile(userId: string): ProfileRow {
     age: null,
     sex: null,
     mobility: Array.from({ length: MILESTONE_COUNT }, () => false),
+    // null, not a default — "not asked yet" has to stay distinguishable from
+    // an answered "none", because they lead to different programming.
+    menopause_stage: null,
+    bone_health: null,
+    pelvic_floor: null,
+    conditions: [],
+    clinician_cleared_at: null,
     disclaimer_accepted_at: null,
     disclaimer_version: null,
     intake_completed_at: null,
@@ -389,7 +396,13 @@ export class GymStore {
 
   async saveCheckin(values: { sleep: number; stress: number; energy: number }) {
     if (!this.db) return;
-    const row: CheckinRow = { user_id: this.userId, date: today(), ...values };
+    const row: CheckinRow = {
+      user_id: this.userId,
+      date: today(),
+      flushes: null,
+      mood: null,
+      ...values,
+    };
     await this.writeLocal("checkins", row);
     await enqueue(this.db, {
       table: "checkins",
@@ -439,6 +452,7 @@ export class GymStore {
       date: today(),
       kg,
       source: "manual",
+      waist_cm: null,
     };
     await this.writeLocal("weights", row);
     await enqueue(this.db, {

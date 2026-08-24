@@ -37,6 +37,30 @@ export type EventType =
 export type EventSource = "manual" | "app" | "health_connect" | "healthkit";
 export type FriendshipStatus = "pending" | "accepted" | "blocked";
 
+/**
+ * M6 — condition-aware programming.
+ *
+ * These are branched on directly rather than inferred from `sex`: surgical
+ * menopause, hysterectomy and trans users all break a sex gate. `sex` decides
+ * which questions intake offers; these decide what the plan does.
+ *
+ * `null` on any of them means "not asked yet", which is deliberately distinct
+ * from an explicit "none" — an untested 54-year-old is not the same as one who
+ * has been scanned and is clear.
+ */
+export type MenopauseStage = "pre" | "peri" | "post" | "undisclosed";
+export type BoneHealth = "none" | "osteopenia" | "osteoporosis" | "untested";
+export type PelvicFloor = "none" | "occasional" | "diagnosed";
+
+/** Medical states. Distinct from `injuries`, which is only a joint filter. */
+export type ConditionKey =
+  | "hypertension"
+  | "type2_diabetes"
+  | "oa_knee"
+  | "oa_hip"
+  | "frozen_shoulder"
+  | "tendinopathy";
+
 export type ProfileRow = {
   id: string;
   display_name: string | null;
@@ -54,6 +78,12 @@ export type ProfileRow = {
   age: number | null;
   sex: "m" | "f" | null;
   mobility: boolean[];
+  menopause_stage: MenopauseStage | null;
+  bone_health: BoneHealth | null;
+  pelvic_floor: PelvicFloor | null;
+  conditions: ConditionKey[];
+  /** Condition-specific programming is gated on this being set. */
+  clinician_cleared_at: string | null;
   disclaimer_accepted_at: string | null;
   disclaimer_version: string | null;
   intake_completed_at: string | null;
@@ -80,6 +110,9 @@ export type CheckinRow = {
   sleep: number;
   stress: number;
   energy: number;
+  /** Perimenopause symptom tracking; null when not tracked. */
+  flushes: number | null;
+  mood: number | null;
 };
 
 export type WeightRow = {
@@ -87,6 +120,8 @@ export type WeightRow = {
   date: string;
   kg: number;
   source: EventSource;
+  /** Tracks the visceral shift around menopause that BMI cannot see. */
+  waist_cm: number | null;
 };
 
 export type HydrationRow = {

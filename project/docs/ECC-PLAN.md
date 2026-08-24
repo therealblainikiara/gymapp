@@ -42,6 +42,16 @@ Stack recommendation: **Supabase** (Postgres + auth + RLS + realtime) with the w
 - C17. Real demo videos per exercise (licensed or shot) replacing API images where available.
 - C18. Camera form analysis: on-device pose model (MediaPipe) for real rep counting; Claude feedback fed real joint angles.
 
+## Milestone 6 — Age & condition-aware programming (new; depends on M2)
+> See `docs/M6-CONDITION-AWARE-PLAN.md`. Scope for this pass is the 45–55 band.
+- C19. Profile fields + intake: menopause stage, bone health, pelvic floor, conditions, clinician clearance. *Schema written and verified; not yet applied.*
+- C20. Exercise contraindication metadata + osteoporosis filter (extends the existing injury filter).
+- C21. Plan-generator rules: bone loading, rep-range shift, pelvic floor, blood pressure, tendinopathy, OA, frozen shoulder, resistance floor — each carrying a reason string so the UI can explain itself.
+- C22. Check-in autoregulation (poor sleep drops a set rather than the session).
+- C23/C24/C25. Recover, Diet and Progress additions.
+- C26. Blood-pressure log — deferred until C21 shows it is wanted.
+*Gate: a peri + osteopenia + OA-knee profile gets bone loading, heavier sets and capped depth, never a contraindicated movement, and can see which declaration caused each change.*
+
 ## Concurrency map
 - Parallel-safe: M1 (prototype) ∥ C6-C8 (backend) ∥ C16 (buddy component).
 - Collisions: C9 depends on C6 schema; C11 and C13 both write `events` (agree schema in C6 first); C18 touches camera screen also modified by C16 demos — sequence C16 → C18.

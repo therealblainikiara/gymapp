@@ -186,8 +186,10 @@ describe("legacy import hardens against a corrupt blob", () => {
       newId,
     );
     expect(r.weights).toEqual([
-      { user_id: USER, date: "2026-08-20", kg: 81, source: "manual" },
-      { user_id: USER, date: "2026-08-21", kg: 82, source: "manual" },
+      // waist_cm is null rather than absent: the prototype never captured it,
+      // and "not measured" is not the same as zero.
+      { user_id: USER, date: "2026-08-20", kg: 81, source: "manual", waist_cm: null },
+      { user_id: USER, date: "2026-08-21", kg: 82, source: "manual", waist_cm: null },
     ]);
   });
 

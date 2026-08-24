@@ -183,6 +183,10 @@ export function planLegacyImport(
       sleep: clamp5(c.sleep),
       stress: clamp5(c.stress),
       energy: clamp5(c.energy),
+      // The prototype never captured these; null keeps them un-tracked rather
+      // than inventing a zero the user did not report.
+      flushes: null,
+      mood: null,
     });
   }
 
@@ -204,11 +208,12 @@ export function planLegacyImport(
         date,
         kg,
         source: "manual",
+        waist_cm: null,
       };
       continue;
     }
     seenWeightDates.add(date);
-    weights.push({ user_id: userId, date, kg, source: "manual" });
+    weights.push({ user_id: userId, date, kg, source: "manual", waist_cm: null });
   }
 
   const hydration: HydrationRow[] = [];
