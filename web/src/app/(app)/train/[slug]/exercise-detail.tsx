@@ -9,7 +9,11 @@ import { useProfile } from "@/lib/local/provider";
 import { GOALS } from "@/lib/domain/goals";
 import { scheme } from "@/lib/domain/plan";
 import { clock } from "@/lib/domain/dates";
-import { fetchExerciseMedia, type ExerciseMedia } from "@/lib/domain/media";
+import {
+  fetchExerciseMedia,
+  isSearchable,
+  type ExerciseMedia,
+} from "@/lib/domain/media";
 import { movementRemovalReason } from "@/lib/domain/conditions";
 import { movementFlags, type Exercise } from "@/lib/domain/exercises";
 
@@ -37,13 +41,18 @@ export default function ExerciseDetail({
     media: ExerciseMedia | null;
   } | null>(null);
   const media = lookup?.name === exercise.n ? lookup.media : null;
-  const loadingMedia = lookup?.name !== exercise.n;
+
+  // C1: bone-loading drills filter on "drop" and "march", which any parade
+  // photograph passes. Skipped rather than searched — see media.ts.
+  const searchable = isSearchable(exercise.n);
+  const loadingMedia = searchable && lookup?.name !== exercise.n;
 
   const [seconds, setSeconds] = useState(0);
   const [running, setRunning] = useState(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
+    if (!searchable) return;
     const controller = new AbortController();
     void fetchExerciseMedia(exercise.n, controller.signal)
       .then((found) => setLookup({ name: exercise.n, media: found }))
@@ -51,7 +60,7 @@ export default function ExerciseDetail({
         // Aborted because the user navigated away; the next screen owns the UI.
       });
     return () => controller.abort();
-  }, [exercise.n]);
+  }, [exercise.n, searchable]);
 
   useEffect(() => {
     if (!running) return;

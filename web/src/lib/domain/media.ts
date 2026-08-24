@@ -14,8 +14,28 @@
  * stranger's photograph and call it a squat.
  */
 
-/** Search overrides where the exercise's own name is a poor query. */
-export const MEDIA_TERMS: Record<string, string> = {
+/**
+ * Search overrides where a movement's own name is a poor query.
+ *
+ * `null` means **do not search at all**. That is not a failure state — the
+ * module's whole position is that an honest "no demonstration found" beats a
+ * stranger's photograph labelled as a squat, and for some names free-text
+ * search cannot get close enough to risk it. C29 already applies the same rule
+ * wholesale to drainage and breath movements, whose names are body parts.
+ *
+ * The names below are skipped because the relevance filter keys off words in
+ * the file title, and for these the discriminating word is the one that gets
+ * dropped — see `relevanceKeywords`. "Bird dog" filters on `bird` alone,
+ * "Dead bug" on `dead`, "Hip circles" on `circles`. Every one of those is a
+ * gate that any animal or landscape photograph walks through.
+ *
+ * `Child's pose` is skipped for a different and firmer reason: its keywords are
+ * `child` and `pose`, and a fitness app must not run an image search that can
+ * return photographs of children. No override fixes that, because the filter
+ * would still be matching on "child". C17 replaces this whole heuristic layer
+ * with a curated library; until then, nothing is the right answer here.
+ */
+export const MEDIA_TERMS: Record<string, string | null> = {
   "Dumbbell floor press": "dumbbell bench press",
   "Dumbbell squeeze press": "dumbbell chest press",
   "One-arm dumbbell row": "dumbbell row",
@@ -25,13 +45,47 @@ export const MEDIA_TERMS: Record<string, string> = {
   "Seated dumbbell press": "dumbbell shoulder press",
   "Overhead triceps extension": "triceps extension",
   "Chair dip": "bench dips",
-  "Dead bug": "dead bug exercise",
-  "Bird dog": "bird dog exercise",
   "Suitcase carry": "farmers walk",
   "Reverse lunge + curl": "lunge exercise",
   "Step-up": "step-up strength training",
   "Inchworm walk-out": "inchworm exercise",
+
+  // ── M6 / C21 — bone loading ─────────────────────────────────────────────
+  // "Heel drop" filters on `drop`, "Stamping march" on `march`. Both are
+  // gates a parade photograph walks straight through, and the JUNK blocklist
+  // cannot enumerate every civilian collision.
+  "Heel drop": null,
+  "Stamping march": null,
+
+  // ── M7 / C28 — recovery movements ───────────────────────────────────────
+  // Skipped: the discriminating word is short and gets stripped, leaving an
+  // animal, an object or a person as the only thing the filter checks for.
+  "Bird dog": null,
+  "Dead bug": null,
+  "Cat–cow": null,
+  "Hip circles": null,
+  "Wall angel": null,
+  "Legs up the wall": null,
+  "Figure-4 stretch": null,
+  "Child's pose": null,
+
+  // Searched, with a term specific enough that its keywords discriminate.
+  "Quadruped rock-back": "quadruped rocking stretch",
+  "World's greatest stretch": "lunge hamstring stretch",
+  "Half-kneeling hip flexor stretch": "kneeling hip flexor stretch",
+  "Chin tuck": "cervical retraction posture",
+  "Thoracic rotation": "thoracic spine rotation stretch",
+  "Wrist and finger opener": "wrist flexor stretch",
+  "Standing hamstring reach": "hamstring stretch standing",
+  "Supine hamstring stretch": "supine hamstring stretch strap",
+  "Doorway chest stretch": "pectoral doorway stretch",
+  "Supine twist": "supine spinal twist stretch",
 };
+
+/** Whether this movement is searched at all. */
+export function isSearchable(name: string): boolean {
+  return MEDIA_TERMS[name] !== null;
+}
 
 const OK_MIME = ["image/jpeg", "image/png", "image/gif", "video/webm"];
 
@@ -48,7 +102,7 @@ const STOPWORDS = ["exercise", "with", "hold", "seated", "standing"];
  * a keyword filter and are never what the user wants to see.
  */
 const JUNK =
-  /military|casualty|inspection|troops|medics|dvids|navy|army|air force|soldier|marine corps|police|drill/i;
+  /military|casualty|inspection|troops|medics|dvids|navy|army|air force|soldier|marine corps|police|drill|parade|marching band|cemetery|funeral|protest|riot|weapon|firearm/i;
 
 export interface CommonsPage {
   index?: number;
@@ -62,8 +116,14 @@ export interface ExerciseMedia {
 }
 
 export function searchTermsFor(name: string): string[] {
-  const base = MEDIA_TERMS[name] ?? name.replace(/Dumbbell |dumbbell /g, "");
-  return [`${base} exercise`, base];
+  const base = mediaBase(name);
+  return base === null ? [] : [`${base} exercise`, base];
+}
+
+/** The query for a movement, or null when it must not be searched. */
+export function mediaBase(name: string): string | null {
+  if (name in MEDIA_TERMS) return MEDIA_TERMS[name];
+  return name.replace(/Dumbbell |dumbbell /g, "");
 }
 
 /** Meaningful words a candidate title must contain to count as relevant. */
@@ -123,7 +183,8 @@ export async function fetchExerciseMedia(
   name: string,
   signal?: AbortSignal,
 ): Promise<ExerciseMedia | null> {
-  const base = MEDIA_TERMS[name] ?? name.replace(/Dumbbell |dumbbell /g, "");
+  const base = mediaBase(name);
+  if (base === null) return null;
   for (const term of searchTermsFor(name)) {
     try {
       const res = await fetch(commonsUrl(term), { signal });

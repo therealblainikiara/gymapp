@@ -8,7 +8,11 @@ import { FitnessBuddy } from "@/components/fitness-buddy";
 import { useProfile, useStore } from "@/lib/local/provider";
 import { clock } from "@/lib/domain/dates";
 import { exerciseSlug, injuryLabel } from "@/lib/domain/exercises";
-import { fetchExerciseMedia, type ExerciseMedia } from "@/lib/domain/media";
+import {
+  fetchExerciseMedia,
+  isSearchable,
+  type ExerciseMedia,
+} from "@/lib/domain/media";
 import { movementRemovalReason } from "@/lib/domain/conditions";
 import {
   findRecoveryMove,
@@ -94,13 +98,16 @@ export default function RecoveryDetail({
   } | null>(null);
   const media = lookup?.name === move.n ? lookup.media : null;
 
-  // Drainage and breath movements are deliberately not searched. Their names
-  // are body-part words — "armpit pump", "abdominal circles" — and the open
-  // media libraries answer those with anatomy photographs and worse. The
-  // keyword filter and junk-domain blocklist exist because "step up" once
-  // resolved to a mass-casualty exercise photo; this is the same failure mode
-  // with a much higher cost, so the query is never made.
-  const searchable = move.kind !== "drainage" && move.kind !== "breath";
+  // Two reasons a movement is never searched, and both live in `media.ts` now
+  // rather than here. By kind: drainage and breath names are body-part words —
+  // "armpit pump", "abdominal circles" — and open media libraries answer those
+  // with anatomy photographs and worse. By name: C1 found several whose
+  // discriminating word is short enough that the relevance filter drops it,
+  // leaving an animal or a person as the only thing it checks for.
+  const searchable =
+    move.kind !== "drainage" &&
+    move.kind !== "breath" &&
+    isSearchable(move.n);
   const loadingMedia = searchable && lookup?.name !== move.n;
 
   useEffect(() => {

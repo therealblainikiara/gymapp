@@ -305,9 +305,19 @@ movement, and counted on Progress when they finish it.
 ## Carried forward
 
 ### M1 — Harden the prototype
-- **C1** *(70%)* Curate image overrides where the Commons lookup is poor; record
-  the per-exercise pass. *Accept: every detail screen shows a relevant image or
-  an honest fallback, verified for all 28.*
+- **C1** *(85% — blocked on network)* Curation done, verification outstanding.
+  The surface was 46 movements, not 28: C21 added bone loading and C29 gave 16
+  recovery movements detail pages, none with overrides. Ten movements are now
+  never searched because their names filter on a word any animal or person
+  satisfies — `Bird dog` on "bird", `Dead bug` on "dead", and `Child's pose` on
+  "child", which a fitness app must not query for at all. Ten new overrides,
+  a widened junk list, and eight tests that fail when a movement is added
+  without an entry. `scripts/media-audit.mjs` runs the live pass and writes the
+  report; `commons.wikimedia.org` is refused by this environment's network
+  policy, so it exits 2 and writes nothing rather than reporting refused
+  requests as honest fallbacks. Detail in `docs/C1-MEDIA-PASS.md`.
+  *Remaining: run that command somewhere with network, and have a person check
+  each match — the filter proves relevance by title, and a title can lie.*
 - **C2** *(85%)* Verify coach feedback against a rate-limited key. The API-key
   decision — project key vs. user-supplied — is still open and was deferred
   deliberately.

@@ -79,9 +79,13 @@ by a test or a named manual check / free of stubs.
 **C1 — image pipeline, claimed done, scored 70%.** `lib/domain/media.ts` does a
 live Wikimedia Commons lookup with an honest empty state, and `media.test.ts`
 covers it. The claim was "verify across all 28 exercises; curate overrides where
-API results are poor" — there are 28 exercises (`exercises.ts`), but no override
-map exists and no record of the per-exercise verification. The mechanism is
-done; the curation pass is not.
+API results are poor". The mechanism is done; the curation pass is not.
+
+> **Correction (C1 pass, 2026-08-24).** This entry originally said "no override
+> map exists". That was wrong — `MEDIA_TERMS` held 15 overrides at the time of
+> the audit. The finding that survives is the second half: there was no record
+> of a per-exercise verification, and the surface had by then grown from 28
+> movements to 46 without anyone tracking it. See `docs/C1-MEDIA-PASS.md`.
 
 **C2 — coach feedback, claimed done, scored 85%.** `/api/coach` is real, behind
 a `CoachProvider` interface, with `CAM_TIPS` as the fallback
