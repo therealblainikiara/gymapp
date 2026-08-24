@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { browserClient } from "@/lib/supabase/client";
 import { Card, Kicker } from "@/components/ui";
 import {
+  ClinicianClearance,
   DayPicker,
   DeviceList,
   DietaryPicker,
   GoalPicker,
+  HealthDeclarations,
   InjuryPicker,
   KIT_OPTIONS,
   LEN_OPTIONS,
@@ -21,43 +23,65 @@ import { GOALS } from "@/lib/domain/goals";
 import { DAY_NAMES } from "@/lib/domain/dates";
 import { injuryLabel } from "@/lib/domain/exercises";
 import { dietaryLabel } from "@/lib/domain/meals";
+import {
+  declaresProgrammingCondition,
+  offersHealthStep,
+  offersMenopauseQuestion,
+  offersPelvicFloorQuestion,
+} from "@/lib/domain/conditions";
 import { openLocalDb, readUi, writeUi } from "@/lib/local/db";
 import type {
+  BoneHealth,
+  ConditionKey,
   DietaryKey,
   Goal,
   InjuryKey,
   Kit,
   Level,
+  MenopauseStage,
   MuscleKey,
+  PelvicFloor,
   PrefTime,
   ProfileRow,
   SessionLen,
 } from "@/lib/types/database";
 
 /**
- * The 7-step intake questionnaire, ported from the prototype's wizard.
+ * The intake questionnaire.
  *
- * The user's brief for this screen was specific: work out "the time they have
- * and preferable exercise times", "any areas of injury or specific things the
- * user wants to work on", and dietary requirements treated as health
- * requirements. The step order and the copy are the approved ones.
+ * Steps are identified by name rather than index, because the health step is
+ * conditional on answers given two steps earlier. With an index, changing your
+ * age on the About step would silently move you to a different question.
  *
  * Answers are held locally and written once, at "Build my plan", together with
- * `intake_completed_at` — so a half-finished wizard never produces a
- * half-configured plan, and abandoning it leaves the gate closed.
+ * `intake_completed_at` — so an abandoned wizard leaves the gate closed rather
+ * than producing a half-configured plan.
  */
 
-const STEP_NAMES = [
-  "Schedule",
-  "Time",
-  "Goal",
-  "Focus & injuries",
-  "Dietary",
-  "Equipment",
-  "Devices",
-];
-
 const PAIRING_MS = 1400;
+
+type StepId =
+  | "schedule"
+  | "time"
+  | "goal"
+  | "focus"
+  | "dietary"
+  | "equipment"
+  | "about"
+  | "health"
+  | "devices";
+
+const STEP_TITLES: Record<StepId, string> = {
+  schedule: "Schedule",
+  time: "Time",
+  goal: "Goal",
+  focus: "Focus & injuries",
+  dietary: "Dietary",
+  equipment: "Equipment",
+  about: "About you",
+  health: "Health",
+  devices: "Devices",
+};
 
 interface Draft {
   goal: Goal;
@@ -69,6 +93,13 @@ interface Draft {
   pref_time: PrefTime;
   dietary: DietaryKey[];
   injuries: InjuryKey[];
+  age: number | null;
+  sex: "m" | "f" | null;
+  height_cm: number | null;
+  menopause_stage: MenopauseStage | null;
+  bone_health: BoneHealth | null;
+  pelvic_floor: PelvicFloor | null;
+  conditions: ConditionKey[];
 }
 
 export default function IntakeWizard({
@@ -79,9 +110,9 @@ export default function IntakeWizard({
   initial: ProfileRow | null;
 }) {
   const router = useRouter();
-  const [step, setStep] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cleared, setCleared] = useState(!!initial?.clinician_cleared_at);
 
   const [draft, setDraft] = useState<Draft>({
     goal: initial?.goal ?? "general",
@@ -93,14 +124,49 @@ export default function IntakeWizard({
     pref_time: initial?.pref_time ?? "morning",
     dietary: initial?.dietary ?? [],
     injuries: initial?.injuries ?? [],
+    age: initial?.age ?? null,
+    sex: initial?.sex ?? null,
+    height_cm: initial?.height_cm ?? null,
+    menopause_stage: initial?.menopause_stage ?? null,
+    bone_health: initial?.bone_health ?? null,
+    pelvic_floor: initial?.pelvic_floor ?? null,
+    conditions: initial?.conditions ?? [],
   });
+
+  // Free-text mirrors, so a half-typed number does not become null mid-keystroke.
+  const [ageText, setAgeText] = useState(initial?.age ? String(initial.age) : "");
+  const [heightText, setHeightText] = useState(
+    initial?.height_cm ? String(initial.height_cm) : "",
+  );
+
+  const audience = { sex: draft.sex, age: draft.age };
+  const steps = useMemo<StepId[]>(() => {
+    const base: StepId[] = [
+      "schedule",
+      "time",
+      "goal",
+      "focus",
+      "dietary",
+      "equipment",
+      "about",
+    ];
+    if (offersHealthStep(audience)) base.push("health");
+    base.push("devices");
+    return base;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft.sex, draft.age]);
+
+  const [stepId, setStepId] = useState<StepId>("schedule");
+  // If the step list changes underfoot — someone went back and set an age that
+  // removes the health step — fall back to the first step rather than a blank.
+  const index = Math.max(0, steps.indexOf(stepId));
+  const current = steps[index] ?? steps[0];
+  const isLast = index === steps.length - 1;
 
   const [devices, setDevices] = useState<Record<string, boolean>>({});
   const [pairing, setPairing] = useState<string | null>(null);
   const pairTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Device flags are local-only, so they come from and go back to the cache
-  // rather than the profile table.
   useEffect(() => {
     let cancelled = false;
     void (async () => {
@@ -132,17 +198,32 @@ export default function IntakeWizard({
     }, PAIRING_MS);
   }
 
+  /** Bounded before it can reach the outbox — the column has a CHECK. */
+  function commitNumber(raw: string, key: "age" | "height_cm", lo: number, hi: number) {
+    const t = raw.trim();
+    if (!t) {
+      set(key, null);
+      return;
+    }
+    const n = Number(t);
+    set(key, Number.isFinite(n) && n >= lo && n <= hi ? n : null);
+  }
+
+  const declaresCondition = declaresProgrammingCondition(draft);
+
   async function finish() {
     setBusy(true);
     setError(null);
-    const supabase = browserClient();
-    // upsert for the same reason as the disclaimer gate: a zero-row UPDATE
-    // reports success, so a missing profile row would silently drop the whole
-    // questionnaire and bounce the user back to step one.
-    const { error } = await supabase.from("profiles").upsert(
+    const { error } = await browserClient().from("profiles").upsert(
       {
         id: userId,
         ...draft,
+        // Only stamped when something was actually declared — a clearance for
+        // nothing is noise in the record.
+        clinician_cleared_at:
+          declaresCondition && cleared
+            ? (initial?.clinician_cleared_at ?? new Date().toISOString())
+            : null,
         intake_completed_at: new Date().toISOString(),
       },
       { onConflict: "id" },
@@ -161,7 +242,7 @@ export default function IntakeWizard({
     router.refresh();
   }
 
-  const canAdvance = !(step === 0 && draft.avail_days.length === 0);
+  const canAdvance = !(current === "schedule" && draft.avail_days.length === 0);
   const goalSpec = GOALS[draft.goal];
 
   const summary = [
@@ -178,6 +259,11 @@ export default function IntakeWizard({
       : null,
     draft.dietary.length
       ? `dietary: ${draft.dietary.map(dietaryLabel).join(", ").toLowerCase()}`
+      : null,
+    declaresCondition
+      ? cleared
+        ? "health declarations active"
+        : "health declarations recorded — awaiting clinician confirmation"
       : null,
   ].filter(Boolean);
 
@@ -209,8 +295,8 @@ export default function IntakeWizard({
           }}
         >
           <Kicker style={{ fontSize: 11 }}>
-            BUILDING YOUR PLAN — STEP {step + 1} OF 7 —{" "}
-            {STEP_NAMES[step].toUpperCase()}
+            BUILDING YOUR PLAN — STEP {index + 1} OF {steps.length} —{" "}
+            {STEP_TITLES[current].toUpperCase()}
           </Kicker>
           <span className="card-meta">GYM APP INTAKE</span>
         </div>
@@ -219,22 +305,21 @@ export default function IntakeWizard({
             style={{
               height: "100%",
               background: "var(--color-accent)",
-              width: `${(((step + 1) / 7) * 100).toFixed(0)}%`,
+              width: `${(((index + 1) / steps.length) * 100).toFixed(0)}%`,
               transition: "width .3s",
             }}
           />
         </div>
 
-        {step === 0 && (
+        {current === "schedule" && (
           <>
             <h3 style={{ margin: 0, textTransform: "uppercase" }}>
               Your week, honestly
             </h3>
             <p className="text-muted" style={{ margin: 0, fontSize: 14 }}>
               Around work and other commitments — which days can you
-              realistically train? Pick the days that usually stay free. Your
-              plan schedules sessions only on these days; the rest become
-              recovery days.
+              realistically train? Your plan schedules sessions only on these
+              days; the rest become recovery days.
             </p>
             <DayPicker
               value={draft.avail_days}
@@ -248,15 +333,13 @@ export default function IntakeWizard({
           </>
         )}
 
-        {step === 1 && (
+        {current === "time" && (
           <>
             <h3 style={{ margin: 0, textTransform: "uppercase" }}>
               When, and for how long
             </h3>
             <p className="text-muted" style={{ margin: 0, fontSize: 14 }}>
-              When do you prefer to exercise, and how much time will you
-              honestly give per day? Short and consistent beats long and
-              abandoned.
+              Short and consistent beats long and abandoned.
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <h6 style={{ margin: 0 }}>Preferred time</h6>
@@ -279,7 +362,7 @@ export default function IntakeWizard({
           </>
         )}
 
-        {step === 2 && (
+        {current === "goal" && (
           <>
             <h3 style={{ margin: 0, textTransform: "uppercase" }}>Your goal</h3>
             <p className="text-muted" style={{ margin: 0, fontSize: 14 }}>
@@ -290,7 +373,7 @@ export default function IntakeWizard({
           </>
         )}
 
-        {step === 3 && (
+        {current === "focus" && (
           <>
             <h3 style={{ margin: 0, textTransform: "uppercase" }}>
               Focus &amp; injuries
@@ -333,7 +416,7 @@ export default function IntakeWizard({
           </>
         )}
 
-        {step === 4 && (
+        {current === "dietary" && (
           <>
             <h3 style={{ margin: 0, textTransform: "uppercase" }}>
               Dietary requirements
@@ -341,8 +424,8 @@ export default function IntakeWizard({
             <p className="text-muted" style={{ margin: 0, fontSize: 14 }}>
               These are treated as{" "}
               <strong>health requirements, not preferences</strong> — meals that
-              don&rsquo;t comply are removed entirely, never just
-              deprioritised. Always verify labels yourself.
+              don&rsquo;t comply are removed entirely. Always verify labels
+              yourself.
             </p>
             <DietaryPicker
               large
@@ -357,7 +440,7 @@ export default function IntakeWizard({
           </>
         )}
 
-        {step === 5 && (
+        {current === "equipment" && (
           <>
             <h3 style={{ margin: 0, textTransform: "uppercase" }}>
               Equipment &amp; experience
@@ -389,7 +472,82 @@ export default function IntakeWizard({
           </>
         )}
 
-        {step === 6 && (
+        {current === "about" && (
+          <>
+            <h3 style={{ margin: 0, textTransform: "uppercase" }}>About you</h3>
+            <p className="text-muted" style={{ margin: 0, fontSize: 14 }}>
+              Used for calorie and protein targets, and to decide which health
+              questions are worth asking. All optional — the plan works without
+              them.
+            </p>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <div className="field" style={{ width: 100 }}>
+                <label htmlFor="age">Age</label>
+                <input
+                  id="age"
+                  className="input"
+                  type="number"
+                  inputMode="numeric"
+                  value={ageText}
+                  onChange={(e) => setAgeText(e.target.value)}
+                  onBlur={() => commitNumber(ageText, "age", 13, 120)}
+                />
+              </div>
+              <div className="field" style={{ width: 120 }}>
+                <label htmlFor="height">Height (cm)</label>
+                <input
+                  id="height"
+                  className="input"
+                  type="number"
+                  inputMode="numeric"
+                  value={heightText}
+                  onChange={(e) => setHeightText(e.target.value)}
+                  onBlur={() => commitNumber(heightText, "height_cm", 100, 250)}
+                />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <h6 style={{ margin: 0 }}>Sex at birth</h6>
+                <Segmented
+                  name="sex"
+                  options={[
+                    { id: "m" as const, label: "Male" },
+                    { id: "f" as const, label: "Female" },
+                  ]}
+                  value={draft.sex ?? ("m" as const)}
+                  onChange={(v) => set("sex", v)}
+                />
+              </div>
+            </div>
+            <span className="card-meta">
+              Sex at birth only decides which health questions we offer next —
+              never what your plan does. You can set any of those answers
+              yourself in Settings regardless.
+            </span>
+          </>
+        )}
+
+        {current === "health" && (
+          <>
+            <h3 style={{ margin: 0, textTransform: "uppercase" }}>
+              Health &amp; life stage
+            </h3>
+            <p className="text-muted" style={{ margin: 0, fontSize: 14 }}>
+              These change what the plan prescribes — and in one case, what it
+              refuses to prescribe. Everything here is optional.
+            </p>
+            <HealthDeclarations
+              value={draft}
+              onChange={(patch) => setDraft((d) => ({ ...d, ...patch }))}
+              offerMenopause={offersMenopauseQuestion(audience)}
+              offerPelvicFloor={offersPelvicFloorQuestion(audience)}
+            />
+            {declaresCondition && (
+              <ClinicianClearance cleared={cleared} onChange={setCleared} />
+            )}
+          </>
+        )}
+
+        {current === "devices" && (
           <>
             <h3 style={{ margin: 0, textTransform: "uppercase" }}>
               Connect your devices
@@ -433,22 +591,13 @@ export default function IntakeWizard({
         >
           <button
             type="button"
-            onClick={() => setStep((s) => Math.max(0, s - 1))}
+            onClick={() => setStepId(steps[Math.max(0, index - 1)])}
             className="btn btn-secondary"
-            style={{ visibility: step === 0 ? "hidden" : "visible" }}
+            style={{ visibility: index === 0 ? "hidden" : "visible" }}
           >
             ← Back
           </button>
-          {step < 6 ? (
-            <button
-              type="button"
-              onClick={() => setStep((s) => Math.min(6, s + 1))}
-              disabled={!canAdvance}
-              className="btn btn-primary"
-            >
-              Next →
-            </button>
-          ) : (
+          {isLast ? (
             <button
               type="button"
               onClick={finish}
@@ -456,6 +605,17 @@ export default function IntakeWizard({
               className="btn btn-primary"
             >
               {busy ? "Saving…" : "Build my plan ✓"}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() =>
+                setStepId(steps[Math.min(steps.length - 1, index + 1)])
+              }
+              disabled={!canAdvance}
+              className="btn btn-primary"
+            >
+              Next →
             </button>
           )}
         </div>

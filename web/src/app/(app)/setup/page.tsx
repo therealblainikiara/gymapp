@@ -3,10 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
+  ClinicianClearance,
   DayPicker,
   DeviceList,
   DietaryPicker,
   GoalPicker,
+  HealthDeclarations,
   InjuryPicker,
   KIT_OPTIONS,
   LEN_OPTIONS,
@@ -17,6 +19,10 @@ import {
 } from "@/components/settings-controls";
 import { useGym, useProfile, useStore } from "@/lib/local/provider";
 import { browserClient } from "@/lib/supabase/client";
+import {
+  conditionProgrammingActive,
+  declaresProgrammingCondition,
+} from "@/lib/domain/conditions";
 
 const PAIRING_MS = 1400;
 
@@ -167,6 +173,38 @@ export default function SetupScreen() {
           value={profile.dietary}
           onChange={(dietary) => void store.patchProfile({ dietary })}
         />
+      </Section>
+
+      <Section
+        title="Health &amp; life stage"
+        hint="— these change what the plan prescribes"
+      >
+        <HealthDeclarations
+          value={profile}
+          onChange={(patch) => void store.patchProfile(patch)}
+          // Setup always offers everything. The age and sex thresholds only
+          // decide what intake bothers to ask — someone who is 38 with
+          // osteoporosis still has to be able to say so.
+          offerMenopause
+          offerPelvicFloor
+        />
+        {declaresProgrammingCondition(profile) && (
+          <ClinicianClearance
+            cleared={!!profile.clinician_cleared_at}
+            onChange={(next) =>
+              void store.patchProfile({
+                clinician_cleared_at: next ? new Date().toISOString() : null,
+              })
+            }
+          />
+        )}
+        <span className="card-meta">
+          {conditionProgrammingActive(profile)
+            ? "Your plan is adjusted for these."
+            : declaresProgrammingCondition(profile)
+              ? "Recorded, but not yet shaping your plan — tick the clinician box above."
+              : "Nothing declared. You are on the standard over-40s plan."}
+        </span>
       </Section>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>

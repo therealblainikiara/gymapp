@@ -7,9 +7,19 @@ import { GOALS, GOAL_KEYS } from "@/lib/domain/goals";
 import { EXERCISE_DB, INJURIES, MUSCLE_KEYS } from "@/lib/domain/exercises";
 import { DIETARY } from "@/lib/domain/meals";
 import { DEVICES } from "@/lib/domain/recovery";
+import {
+  BONE_HEALTH_OPTIONS,
+  CONDITIONS,
+  MENOPAUSE_OPTIONS,
+  PELVIC_FLOOR_OPTIONS,
+} from "@/lib/domain/conditions";
 import type {
+  BoneHealth,
+  ConditionKey,
   DietaryKey,
   Goal,
+  MenopauseStage,
+  PelvicFloor,
   InjuryKey,
   Kit,
   Level,
@@ -294,6 +304,215 @@ export function DeviceList({
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// ── M6 / C19 — health declarations ──────────────────────────────────────────
+
+/**
+ * The health block, shared by intake and Setup so the two cannot drift.
+ *
+ * `offerMenopause` and `offerPelvicFloor` are passed in rather than derived
+ * here: intake asks only what is relevant to the person, Setup always shows
+ * everything, and the component should not have to know which caller it is.
+ */
+export function HealthDeclarations({
+  value,
+  onChange,
+  offerMenopause,
+  offerPelvicFloor,
+}: {
+  value: {
+    menopause_stage: MenopauseStage | null;
+    bone_health: BoneHealth | null;
+    pelvic_floor: PelvicFloor | null;
+    conditions: ConditionKey[];
+  };
+  onChange: (patch: Partial<typeof value>) => void;
+  offerMenopause: boolean;
+  offerPelvicFloor: boolean;
+}) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {offerMenopause && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <h6 style={{ margin: 0 }}>Menopause stage</h6>
+          <OptionChips
+            options={MENOPAUSE_OPTIONS}
+            value={value.menopause_stage}
+            onChange={(menopause_stage) => onChange({ menopause_stage })}
+          />
+          <span className="card-meta">
+            Perimenopause changes how bone, recovery and training load respond —
+            it is the single most useful thing you can tell us here.
+          </span>
+        </div>
+      )}
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        <h6 style={{ margin: 0 }}>Bone health</h6>
+        <OptionChips
+          options={BONE_HEALTH_OPTIONS}
+          value={value.bone_health}
+          onChange={(bone_health) => onChange({ bone_health })}
+        />
+        <span className="card-meta">
+          With osteoporosis we remove movements that load the spine in flexion
+          or rotation. &ldquo;Never tested&rdquo; is a real answer — we treat it
+          differently from a clear scan.
+        </span>
+      </div>
+
+      {offerPelvicFloor && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <h6 style={{ margin: 0 }}>Pelvic floor</h6>
+          <OptionChips
+            options={PELVIC_FLOOR_OPTIONS}
+            value={value.pelvic_floor}
+            onChange={(pelvic_floor) => onChange({ pelvic_floor })}
+          />
+          <span className="card-meta">
+            Affects impact work and heavy bracing. Common, treatable, and worth
+            saying.
+          </span>
+        </div>
+      )}
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        <h6 style={{ margin: 0 }}>
+          Diagnosed conditions{" "}
+          <span
+            className="text-muted"
+            style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0 }}
+          >
+            — select any that apply
+          </span>
+        </h6>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {CONDITIONS.map((c) => {
+            const on = value.conditions.includes(c.id);
+            return (
+              <button
+                key={c.id}
+                type="button"
+                aria-pressed={on}
+                onClick={() =>
+                  onChange({
+                    conditions: on
+                      ? value.conditions.filter((x) => x !== c.id)
+                      : [...value.conditions, c.id],
+                  })
+                }
+                className="btn"
+                style={{
+                  flexDirection: "column",
+                  alignItems: "flex-start",
+                  gap: 1,
+                  padding: "8px 12px",
+                  ...toggleStyle(on),
+                }}
+              >
+                <span style={{ fontSize: 14 }}>{c.label}</span>
+                <span
+                  style={{
+                    fontFamily: "var(--font-body)",
+                    fontWeight: 400,
+                    fontSize: 11.5,
+                    opacity: 0.72,
+                    textAlign: "left",
+                  }}
+                >
+                  {c.note}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Single-select chips for the three either/or health fields. */
+function OptionChips<T extends string>({
+  options,
+  value,
+  onChange,
+}: {
+  options: ReadonlyArray<{ id: T; label: string }>;
+  value: T | null;
+  onChange: (next: T) => void;
+}) {
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+      {options.map((o) => (
+        <button
+          key={o.id}
+          type="button"
+          aria-pressed={value === o.id}
+          onClick={() => onChange(o.id)}
+          className="btn"
+          style={{
+            padding: "5px 12px",
+            fontSize: 12.5,
+            ...toggleStyle(value === o.id),
+          }}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * The clearance gate. Condition-specific programming does not run until this is
+ * ticked — a self-reported diagnosis is enough to ask about, not enough to
+ * program on.
+ */
+export function ClinicianClearance({
+  cleared,
+  onChange,
+}: {
+  cleared: boolean;
+  onChange: (next: boolean) => void;
+}) {
+  return (
+    <div
+      style={{
+        border: "1px solid var(--color-accent)",
+        padding: 12,
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+      }}
+    >
+      <label className="radio" style={{ alignItems: "flex-start", gap: 10 }}>
+        <input
+          type="checkbox"
+          checked={cleared}
+          onChange={(e) => onChange(e.target.checked)}
+        />
+        <span
+          className="dot"
+          style={{
+            borderRadius: 0,
+            background: cleared ? "var(--color-accent)" : "transparent",
+            borderColor: cleared
+              ? "var(--color-accent)"
+              : "var(--color-divider)",
+          }}
+        />
+        <span style={{ fontSize: 13.5 }}>
+          I have discussed exercising with these conditions with a doctor or
+          physiotherapist, and they are happy for me to train.
+        </span>
+      </label>
+      <span className="card-meta">
+        Until this is ticked you get the standard over-40s plan. We will not
+        change your programme on the strength of a tick-box alone.
+      </span>
     </div>
   );
 }
