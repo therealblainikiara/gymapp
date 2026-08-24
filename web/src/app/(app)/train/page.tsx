@@ -158,6 +158,7 @@ export default function TrainScreen() {
                   >
                     <span style={{ color: "var(--color-accent-700)" }}>
                       {ex.name}
+                      {ex.isBoneLoading && " ⬍"}
                     </span>
                     <span style={{ whiteSpace: "nowrap", opacity: 0.7 }}>
                       {ex.scheme} · rest {ex.rest}
@@ -166,6 +167,20 @@ export default function TrainScreen() {
                 ),
               )}
             </div>
+            {d.reasons.map((r) => (
+              <span
+                key={r}
+                className="card-meta"
+                style={{ margin: 0, color: "var(--color-accent-700)" }}
+              >
+                {r}
+              </span>
+            ))}
+            {d.notes.map((n) => (
+              <span key={n} className="card-meta" style={{ margin: 0 }}>
+                {n}
+              </span>
+            ))}
             <p className="card-meta" style={{ margin: 0 }}>
               {d.tip}
             </p>

@@ -33,7 +33,7 @@ honour. See `docs/ECC-AUDIT.md` §2 C-4.
 | M3 Social | C10 80% · C11 40% · C12 70% |
 | M4 Devices | Simulated, disclosed in-app |
 | M5 Buddy + media | C16 10% · C17 30% · C18 15% |
-| M6 Condition-aware | **C19, C20 done** · C21–C26 open |
+| M6 Condition-aware | **C19–C21 done** · C22–C26 open |
 | M7 Recovery parity | **Done** — C27–C32 |
 
 ---
@@ -333,14 +333,14 @@ movement, and counted on Progress when they finish it.
   today, disclosed in the UI.
 
 ### M6 — Condition-aware programming
-C19 and C20 are done. C21 is the substantive one: eight generator rules, each
-carrying a reason string, with the composition test as the real gate rather than
-the per-rule ones. C22–C26 follow. Detail in
+C19, C20 and **C21** are done. C22–C26 follow. Detail in
 `docs/M6-CONDITION-AWARE-PLAN.md`.
 
-**C21 and C30 collide** — both are plan generators reading the same
-declarations, and C30 will want C21's reason strings. Sequence C21 → C30, or
-accept that C30 rewires when C21 lands.
+**The C21/C30 collision resolved itself.** Both read the same declarations, and
+the plan said to sequence C21 first or accept a rewire. C30 landed first and
+needed no rewiring, because `removedMovementFlags()` was already the single
+place both generators asked what to filter — C21 pointed it at the new rule set
+and every screen picked the new removals up at once.
 
 ### Documentation debt
 - **W1** `docs/M2-SCHEMA-CHANGELOG.md` is three migrations behind: the profile

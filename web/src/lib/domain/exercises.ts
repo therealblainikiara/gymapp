@@ -38,8 +38,18 @@ export type MovementFlag =
   | "overhead"
   /** Front knee travels past roughly parallel. */
   | "deep_knee_flexion"
-  /** Braced effort that spikes intra-abdominal pressure. */
+  /** Braced effort under load, which spikes intra-abdominal pressure. */
   | "valsalva"
+  /**
+   * A deliberate pause in breathing with no load on the body.
+   *
+   * Split from `valsalva` in C21. One flag covering both meant the pelvic-floor
+   * rule — which removes heavy Valsalva — would also have removed box
+   * breathing, whose four-second pauses are the opposite of the mechanism the
+   * rule is about. Blood pressure cares about both; the pelvic floor cares
+   * about one.
+   */
+  | "breath_hold"
   /** A sustained hold rather than reps. */
   | "isometric_hold";
 
@@ -50,6 +60,7 @@ export const MOVEMENT_FLAGS: MovementFlag[] = [
   "overhead",
   "deep_knee_flexion",
   "valsalva",
+  "breath_hold",
   "isometric_hold",
 ];
 
@@ -491,6 +502,62 @@ export const EXERCISE_DB: Record<MuscleKey, MuscleGroup> = {
 
 export const MUSCLE_KEYS = Object.keys(EXERCISE_DB) as MuscleKey[];
 
+/**
+ * M6 / C21 — the bone-loading block.
+ *
+ * Bone responds to load that arrives fast, not to load that arrives heavy, so
+ * the rule for declared low bone density appends impact work rather than more
+ * weight. These live outside `EXERCISE_DB` on purpose: they must never be drawn
+ * into an ordinary plan by the muscle-group rotation, only appended by the rule
+ * that asked for them.
+ *
+ * They are still real library entries — `findExercise` searches here too — so a
+ * prescribed movement has a detail page like every other, and so `safe()`
+ * filters them like every other. That last part is what makes composition work
+ * without a special case: someone with declared pelvic-floor symptoms has
+ * `impact` removed, these carry `impact`, and the block empties itself.
+ */
+export const BONE_LOADING: Exercise[] = [
+  {
+    n: "Heel drop",
+    k: "bw",
+    av: ["knee", "back"],
+    contra: ["impact"],
+    c: [
+      "Rise onto the toes, then drop the heels to the floor",
+      "Let the jolt travel up through straight-ish legs",
+      "One drop every two seconds — no rushing",
+    ],
+    s: "The jolt is the point, so do not cushion it — but hold a counter for balance. Stop if anything is sharp rather than jarring.",
+    e: "Half the height, holding a counter with both hands",
+    // The progression to hopping lives here rather than as a third library
+    // entry: prescribing a hop alongside the drills it is meant to follow
+    // would contradict the note above it.
+    h: "Add a small hop at the top, once a month of drops is easy",
+  },
+  {
+    n: "Stamping march",
+    k: "bw",
+    av: ["knee"],
+    contra: ["impact"],
+    c: [
+      "March on the spot, stamping each foot down",
+      "Knees to a comfortable height, not high",
+      "Land through the whole foot",
+    ],
+    s: "The most forgiving way to load bone — the ground reaction is real but the height is nil.",
+    e: "Slower, softer, holding support",
+    h: "Faster cadence, higher knee",
+  },
+];
+
+const BONE_LOADING_NAMES = new Set(BONE_LOADING.map((x) => x.n));
+
+/** True for a movement that only the bone-loading rule prescribes. */
+export function isBoneLoading(name: string): boolean {
+  return BONE_LOADING_NAMES.has(name);
+}
+
 export const ALL_EXERCISES: Exercise[] = MUSCLE_KEYS.flatMap(
   (k) => EXERCISE_DB[k].ex,
 );
@@ -532,7 +599,8 @@ export function findExercise(
     const hit = EXERCISE_DB[key].ex.find((x) => x.n === name);
     if (hit) return { ...hit, muscle: EXERCISE_DB[key].label };
   }
-  return null;
+  const bone = BONE_LOADING.find((x) => x.n === name);
+  return bone ? { ...bone, muscle: "Bone loading" } : null;
 }
 
 /** URL-safe id for the exercise-detail route. */
@@ -548,5 +616,5 @@ export function exerciseFromSlug(slug: string): string | null {
     const hit = EXERCISE_DB[key].ex.find((x) => exerciseSlug(x.n) === slug);
     if (hit) return hit.n;
   }
-  return null;
+  return BONE_LOADING.find((x) => exerciseSlug(x.n) === slug)?.n ?? null;
 }

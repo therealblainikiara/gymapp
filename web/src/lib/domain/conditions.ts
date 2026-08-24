@@ -1,4 +1,5 @@
 import type { MovementFlag } from "./exercises";
+import { removalsFor } from "./rules";
 import type {
   BoneHealth,
   ConditionKey,
@@ -177,13 +178,19 @@ export function conditionProgrammingActive(p: Declarations): boolean {
  * it as an adjustment rather than a removal.
  */
 export function removedMovementFlags(
-  d: Pick<Declarations, "bone_health">,
+  d: Partial<Declarations>,
 ): MovementFlag[] {
-  // Vertebral fracture in osteoporosis is overwhelmingly a flexion injury, and
-  // it happens at loads people do not think of as heavy.
-  return d.bone_health === "osteoporosis"
-    ? ["spinal_flexion", "spinal_rotation"]
-    : [];
+  // Delegates to C21's rule set so a rule added there reaches `safe()`, the
+  // recovery filter and the detail pages at once. Partial rather than full
+  // Declarations because callers legitimately hold only some of them — an
+  // absent field means "not declared", which is the same as declining.
+  return removalsFor({
+    menopause_stage: d.menopause_stage ?? null,
+    bone_health: d.bone_health ?? null,
+    pelvic_floor: d.pelvic_floor ?? null,
+    conditions: d.conditions ?? [],
+    clinician_cleared_at: d.clinician_cleared_at ?? null,
+  });
 }
 
 /**
@@ -197,7 +204,7 @@ export function removedMovementFlags(
  */
 export function movementRemovalReason(
   flags: MovementFlag[],
-  d: Pick<Declarations, "bone_health">,
+  d: Partial<Declarations>,
 ): string | null {
   const why = movementSwapReason(flags, d);
   return why && `Not in your plan. ${why} Ask your clinician before you add it back.`;
@@ -213,18 +220,85 @@ export function movementRemovalReason(
  */
 export function movementSwapReason(
   flags: MovementFlag[],
-  d: Pick<Declarations, "bone_health">,
+  d: Partial<Declarations>,
 ): string | null {
   const hit = removedMovementFlags(d).filter((f) => flags.includes(f));
   if (!hit.length) return null;
-  const mechanic = hit.includes("spinal_flexion")
-    ? "bends the spine forward"
-    : "twists the spine to end range";
-  return (
-    `You told us you have osteoporosis, and this movement ${mechanic} — ` +
-    `the pattern most associated with vertebral fracture.`
-  );
+  // Name the declaration that actually caused it. Until C21 only bone health
+  // removed anything, so one hard-coded sentence was correct; five
+  // declarations later, telling someone with a frozen shoulder that their
+  // osteoporosis removed an overhead press would be nonsense.
+  const because = CAUSES.find((c) => hit.includes(c.flag) && c.applies(d));
+  return because
+    ? `You told us ${because.declaration}, and this movement ${because.mechanic}.`
+    : null;
 }
+
+interface Cause {
+  flag: MovementFlag;
+  applies: (d: Partial<Declarations>) => boolean;
+  declaration: string;
+  mechanic: string;
+}
+
+const hasCondition = (d: Partial<Declarations>, key: ConditionKey) =>
+  (d.conditions ?? []).includes(key);
+
+/**
+ * Flag → the declaration that removed it, most specific first.
+ *
+ * Ordered rather than keyed, because one flag can have more than one cause and
+ * the first match is the one worth naming. A single sentence beats an accurate
+ * list nobody reads.
+ */
+const CAUSES: Cause[] = [
+  {
+    flag: "spinal_flexion",
+    applies: (d) => d.bone_health === "osteoporosis",
+    declaration: "you have osteoporosis",
+    mechanic:
+      "bends the spine forward — the pattern most associated with vertebral fracture",
+  },
+  {
+    flag: "spinal_rotation",
+    applies: (d) => d.bone_health === "osteoporosis",
+    declaration: "you have osteoporosis",
+    mechanic:
+      "twists the spine to end range — the pattern most associated with vertebral fracture",
+  },
+  {
+    flag: "overhead",
+    applies: (d) => hasCondition(d, "frozen_shoulder"),
+    declaration: "about a frozen shoulder",
+    mechanic: "finishes above the shoulder, which that range will not allow yet",
+  },
+  {
+    flag: "deep_knee_flexion",
+    applies: (d) => hasCondition(d, "oa_knee") || hasCondition(d, "oa_hip"),
+    declaration: "about osteoarthritis",
+    mechanic: "needs depth past parallel to be itself",
+  },
+  {
+    flag: "impact",
+    applies: (d) =>
+      d.pelvic_floor === "occasional" || d.pelvic_floor === "diagnosed",
+    declaration: "about pelvic floor symptoms",
+    mechanic: "lands through the floor of the pelvis",
+  },
+  {
+    flag: "valsalva",
+    applies: (d) =>
+      d.pelvic_floor === "occasional" || d.pelvic_floor === "diagnosed",
+    declaration: "about pelvic floor symptoms",
+    mechanic: "needs a braced breath hold under load",
+  },
+  {
+    flag: "isometric_hold",
+    applies: (d) => hasCondition(d, "hypertension"),
+    declaration: "about high blood pressure",
+    mechanic: "is a sustained hold, which raises blood pressure sharply",
+  },
+];
 
 // ── Validators, mirroring the CHECK constraints ─────────────────────────────
 // A write the database rejects stalls every queued write behind it, so nothing

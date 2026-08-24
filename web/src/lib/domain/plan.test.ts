@@ -8,6 +8,7 @@ import {
   MOVEMENT_FLAGS,
   movementFlags,
   MUSCLE_KEYS,
+  isBoneLoading,
 } from "./exercises";
 import { removedMovementFlags } from "./conditions";
 import { GOALS } from "./goals";
@@ -302,6 +303,146 @@ describe("exercise library", () => {
         (x) => !movementFlags(x).some((f) => banned.includes(f)),
       );
       expect(left.length, `${key} filters empty`).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe("C21 — the rules reach the plan", () => {
+  const CLEARED = "2026-08-24T10:00:00Z";
+  const declaring = (patch: Partial<PlanSettings>): PlanSettings => ({
+    ...base,
+    muscles: MUSCLE_KEYS,
+    clinician_cleared_at: CLEARED,
+    ...patch,
+  });
+
+  it("appends bone loading twice a week, and only for low bone density", () => {
+    const days = buildPlan(declaring({ bone_health: "osteopenia" }));
+    const withBone = days.filter((d) =>
+      d.exercises.some((e) => e.isBoneLoading),
+    );
+    expect(withBone).toHaveLength(2);
+    expect(
+      buildPlan(declaring({ bone_health: "none" })).flatMap((d) =>
+        d.exercises.filter((e) => e.isBoneLoading),
+      ),
+    ).toEqual([]);
+  });
+
+  it("keeps bone loading out until a clinician has been in the loop", () => {
+    const days = buildPlan(
+      declaring({ bone_health: "osteopenia", clinician_cleared_at: null }),
+    );
+    expect(days.flatMap((d) => d.exercises.filter((e) => e.isBoneLoading)))
+      .toEqual([]);
+  });
+
+  it("moves the compound rep range for peri and post menopause", () => {
+    const before = buildPlan(base)[0].exercises[0].scheme;
+    const after = buildPlan(declaring({ menopause_stage: "peri" }))[0]
+      .exercises[0].scheme;
+    expect(after).toContain("6–8");
+    expect(after).not.toBe(before);
+  });
+
+  it("lengthens every rest for declared hypertension", () => {
+    const days = buildPlan(declaring({ conditions: ["hypertension"] }));
+    for (const e of days.flatMap((d) => d.exercises)) {
+      if (e.isFinisher) continue;
+      expect(e.rest, e.name).toBe("90 s"); // general: 60 s + 30
+    }
+  });
+
+  it("carries the reasons onto every day, not just the first", () => {
+    // A user landing on Wednesday should not have to find Monday's card to
+    // learn why their rep range moved.
+    const days = buildPlan(declaring({ menopause_stage: "peri" }));
+    expect(days.length).toBeGreaterThan(1);
+    for (const d of days) {
+      expect(d.reasons.join(" "), d.label).toContain("perimenopausal");
+    }
+  });
+
+  it("gives a plain plan no reasons and no notes", () => {
+    for (const d of buildPlan(base)) {
+      expect(d.reasons).toEqual([]);
+      expect(d.notes).toEqual([]);
+    }
+  });
+
+  it("holds the resistance floor at two full-body days", () => {
+    const days = buildPlan(
+      declaring({ muscles: ["arms"], bone_health: "osteopenia" }),
+    );
+    const fullBody = days.filter((d) => d.focus.includes("Full body"));
+    expect(fullBody.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("never prescribes a removed mechanic, for any declaration or goal", () => {
+    // The C20 sweep widened to every rule that removes.
+    const patches: Partial<PlanSettings>[] = [
+      { bone_health: "osteoporosis" },
+      { pelvic_floor: "diagnosed" },
+      { conditions: ["frozen_shoulder"] },
+      { conditions: ["oa_knee"] },
+      { conditions: ["hypertension"] },
+      {
+        bone_health: "osteoporosis",
+        pelvic_floor: "diagnosed",
+        conditions: ["frozen_shoulder", "oa_knee", "hypertension"],
+      },
+    ];
+    for (const patch of patches) {
+      for (const goal of Object.keys(GOALS) as Goal[]) {
+        for (const kit of ["bw", "dbbw"] as const) {
+          for (const session_len of [10, 30, 60] as const) {
+            const s = declaring({ ...patch, goal, kit, session_len });
+            const banned = removedMovementFlags(s);
+            const days = buildPlan(s);
+            expect(days.flatMap((d) => d.exercises).length).toBeGreaterThan(0);
+            for (const e of days.flatMap((d) => d.exercises)) {
+              if (e.isFinisher) continue;
+              const ex = findExercise(e.name);
+              for (const f of movementFlags(ex!)) {
+                expect(banned, `${e.name} despite ${f}`).not.toContain(f);
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+
+  it("does not prescribe impact to someone whose pelvic floor rules it out", () => {
+    // The composition case: one rule appends impact, another removes it. The
+    // block empties itself through `safe()` rather than by the rules knowing
+    // about each other.
+    const days = buildPlan(
+      declaring({ bone_health: "osteoporosis", pelvic_floor: "diagnosed" }),
+    );
+    expect(days.flatMap((d) => d.exercises.filter((e) => e.isBoneLoading)))
+      .toEqual([]);
+    expect(days[0].reasons.join(" ")).toContain("pelvic floor");
+  });
+
+  it("gives every bone-loading movement a detail page", () => {
+    const days = buildPlan(declaring({ bone_health: "osteopenia" }));
+    for (const e of days.flatMap((d) =>
+      d.exercises.filter((x) => x.isBoneLoading),
+    )) {
+      const ex = findExercise(e.name);
+      expect(ex, e.name).toBeTruthy();
+      expect(ex!.c.length).toBeGreaterThan(0);
+      expect(ex!.s).toBeTruthy();
+    }
+  });
+
+  it("keeps bone-loading movements out of ordinary plans", () => {
+    // They live outside EXERCISE_DB so the muscle rotation can never draw them
+    // in — impact work must be prescribed by the rule that asked for it.
+    for (const goal of Object.keys(GOALS) as Goal[]) {
+      const names = namesIn({ ...base, goal, muscles: MUSCLE_KEYS });
+      for (const n of names) expect(isBoneLoading(n), n).toBe(false);
     }
   });
 });

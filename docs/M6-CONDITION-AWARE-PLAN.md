@@ -98,7 +98,7 @@ one asserts the filter fires without clearance, and one asserts it fires only on
 osteoporosis. Verified by mutation: blanking `removedMovementFlags` fails 2
 tests.
 
-### C21 — Plan generator rules
+### C21 — Plan generator rules *(done)*
 
 The substantive chunk. Each rule is a pure function over the profile:
 
@@ -116,9 +116,59 @@ The substantive chunk. Each rule is a pure function over the profile:
 Each returns a **reason string** attached to the day, so the UI can show "heavier
 sets — you told us you're perimenopausal" rather than silently changing the plan.
 
-*Accept:* one test per rule proving it fires on the trigger and only on the
-trigger; a combined test proving rules compose without contradicting (BP + bone
-loading must not prescribe max-effort impact).
+**Built in `lib/domain/rules.ts`.** `applyRules(declarations)` returns one
+`Adjustments` value that `buildPlan` reads: what to remove, a rep override,
+extra rest, whether to append bone loading, a full-body floor, coaching notes,
+and the reason strings.
+
+Four decisions worth recording.
+
+*`removalsFor()` became the single source of removals.* `removedMovementFlags()`
+in `conditions.ts` now delegates to it, so a rule added in C21 reaches the
+workout filter, the recovery filter and both detail pages at once. That is the
+M7 lesson applied before it could bite again.
+
+*The `valsalva` flag had to be split.* It tagged both a loaded squat and box
+breathing, and the pelvic-floor rule removes heavy Valsalva — which would have
+removed box breathing, whose four-second pauses are the opposite of the
+mechanism. `breath_hold` now covers unloaded pauses; blood pressure reads both,
+the pelvic floor reads one.
+
+*Hypertension does not remove overhead work.* The table says "drops maximal
+overhead work", but "maximal" is a load, not a movement, and taking the press
+away from someone who can press safely is the wrong instrument. It removes
+`isometric_hold`, lengthens rests by 30 s and adds an exhale cue.
+
+*Tendinopathy is a note, not a swap.* `conditions` records that there is a
+tendinopathy, not where. There is no affected pattern to swap, and inventing one
+from a list that cannot name a site would be worse than saying so. The reason
+string says so to the user too.
+
+**Composition works through `safe()` rather than through the rules knowing about
+each other.** The bone rule appends impact work; the pelvic-floor rule removes
+impact; the block runs through the same filter as everything else and empties
+itself. `boneLoadingBlocked` exists so the screen says "ask your clinician which
+matters more for you" instead of showing an empty block.
+
+Bone-loading movements live outside `EXERCISE_DB` so the muscle rotation can
+never draw them into an ordinary plan, but `findExercise` searches them, so a
+prescribed drill has a detail page like everything else. They come out of the
+session budget rather than being bolted on top of the time the user said they
+had.
+
+*Accept:* met. 32 tests in `rules.test.ts` plus 10 in `plan.test.ts`. One test
+per rule proving it fires on its trigger and only on its trigger; the gate
+proven to hold back every addition and not one removal; the BP + bone-loading
+composition proven not to prescribe max-effort impact; the pelvic-floor + bone
+contradiction proven to resolve toward the removal *and say so*. Mutation-
+verified three ways — ignoring the gate fails 2, gating removals fails 5,
+letting bone loading beat the pelvic floor fails 2.
+
+Three defects only real generated output revealed: three impact drills at once
+contradicted the progression in their own safety notes (now two, and `Low hop`
+was folded into `Heel drop`'s harder variation rather than left as dead
+content); the block ignored the session budget; and the rep-shift reason claimed
+"compound lifts" while the override reached every movement.
 
 ### C22 — Check-in autoregulation
 

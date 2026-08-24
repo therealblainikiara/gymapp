@@ -348,9 +348,9 @@ export const RECOVERY_LIBRARY: RecoveryMove[] = [
     s: "The holds are gentle pauses, not breath-holding against pressure. If you have high blood pressure, shorten or skip the holds and just lengthen the exhale.",
     e: "Drop both holds — in for 4, out for 6",
     h: "Extend each phase to 5 or 6 s",
-    // A braced breath-hold raises intra-abdominal and intra-thoracic pressure.
-    // Tagged for C21's blood-pressure rule; nothing removes it today.
-    contra: ["valsalva"],
+    // Unloaded pauses, not braced effort — see MovementFlag. The
+    // blood-pressure rule reads this; the pelvic-floor rule does not.
+    contra: ["breath_hold"],
   },
   {
     n: "90/90 breathing",
