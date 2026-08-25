@@ -95,8 +95,8 @@ export const MEDIA_TERMS: Record<string, string | null> = {
  * Add the slug to `CURATED` when the file lands.
  */
 export const CURATED = new Set<string>([
-  // Populated as illustrations are generated and committed. Every entry must
-  // have a matching file in web/public/movements/, which media.test.ts checks.
+  // Populated as illustrations are generated and committed. Every entry
+  // must have a matching file in web/public/movements/.
 ]);
 
 export function curatedMedia(name: string): ExerciseMedia | null {

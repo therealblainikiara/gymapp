@@ -48,6 +48,23 @@ gradient, no drop shadow, no texture, no paper grain.
 photograph, photorealistic, 3D render, CGI, clay render; colour beyond the two named, gradients, shading, cross-hatching, halftone; gym background, mirrors, weight racks, scenery, floor lines, horizon; face, facial features, identifiable person, tattoos, branded clothing; text, letters, numbers, labels, arrows with text, watermark, signature, logo; multiple unrelated figures, crowd, mirrored duplicate of the figure; drop shadow, vignette, paper texture, sketchy or wobbly linework; anatomically impossible joints, extra limbs, extra fingers
 ```
 
+## Merging the finished art back in
+
+Name each file by its slug and drop it in `web/public/movements/`. The exact
+list is `assets/image-manifest.csv`, and every prompt below is headed by the
+filename it must produce.
+
+```
+node scripts/ingest-images.mjs           # what is in, missing, or misnamed
+node scripts/ingest-images.mjs --write   # update CURATED in media.ts
+```
+
+The check matters more than the write. `curatedMedia()` builds the path from
+the movement's slug, so `goblet_squat.png` or `Goblet Squat.png` resolve to
+nothing and fail *silently* — the page falls back to the empty state and
+nobody notices the image exists. The script names those instead, and suggests
+the slug it thinks you meant.
+
 ## Aspect ratio
 
 4:3 landscape, 1600 × 1200 for all of them. The detail page uses
