@@ -310,6 +310,13 @@ export default function HomeScreen() {
           className="elev-sm"
           style={{
             flex: "2 1 320px",
+            // A flex item defaults to `min-width: auto`, which refuses to
+            // shrink below its content's minimum — this card's rows measured
+            // 369px against a 354px column on a 390px phone, and the blueprint
+            // corner markers, which sit 5px outside the frame, pushed the
+            // document 2px wider than the viewport and gave Home a sideways
+            // scroll. Nothing else on the screen showed it.
+            minWidth: 0,
             padding: 0,
             gap: 0,
             overflow: "visible",

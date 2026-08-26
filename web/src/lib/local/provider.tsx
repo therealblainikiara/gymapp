@@ -11,6 +11,7 @@ import {
 } from "react";
 import { browserClient } from "@/lib/supabase/client";
 import { defaultProfile, GymStore, type StoreSnapshot } from "./store";
+import { PREVIEW_HARNESS } from "@/lib/preview";
 
 const StoreContext = createContext<GymStore | null>(null);
 
@@ -37,6 +38,18 @@ export function GymStoreProvider({
   useEffect(() => {
     void store.start();
     return () => store.dispose();
+  }, [store]);
+
+  // Preview harness only: hand the store to the driver script so it can seed a
+  // fixture through `patchProfile` / `addWeight` / `addEvent` — the same writes
+  // the UI makes. Seeding IndexedDB from outside would test a schema I had
+  // written twice; seeding through the store tests the one the app uses.
+  useEffect(() => {
+    if (!PREVIEW_HARNESS) return;
+    (window as unknown as { __gym?: GymStore }).__gym = store;
+    return () => {
+      delete (window as unknown as { __gym?: GymStore }).__gym;
+    };
   }, [store]);
 
   return <StoreContext.Provider value={store}>{children}</StoreContext.Provider>;

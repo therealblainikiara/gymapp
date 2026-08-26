@@ -257,6 +257,10 @@ export default function RecoverScreen({
             }}
           >
             <div
+              // Named so the reduced-motion rule in globals.css can leave this
+              // one alone. Every other animation in the app is decoration; this
+              // one is the pace the user is breathing to.
+              className="breathing-orb"
               style={{
                 width: 110,
                 height: 110,

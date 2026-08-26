@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { DB_SCHEMA, type Database, type DbSchema } from "@/lib/types/database";
 import { DISCLAIMER_VERSION } from "@/lib/disclaimer";
+import { PREVIEW_HARNESS } from "@/lib/preview";
 
 /**
  * The gate.
@@ -29,6 +30,11 @@ function isPublic(pathname: string): boolean {
 }
 
 export async function proxy(request: NextRequest) {
+  // The preview harness renders the signed-in screens with no session at all,
+  // so the gate has nothing to check and no Supabase to check it against. See
+  // lib/preview.ts for the two locks that keep this out of a deployment.
+  if (PREVIEW_HARNESS) return NextResponse.next({ request });
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient<Database, DbSchema>(

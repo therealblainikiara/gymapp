@@ -259,6 +259,16 @@ export default function ExerciseDetail({
         </Card>
       </div>
 
+      {/* No set timer for a movement that is not in the plan.
+       *
+       * The cues, the joint-safe note and the variations stay: understanding a
+       * movement is never gated, and someone whose clinician does clear it will
+       * want to have read them. The timer is different — it prescribes a
+       * scheme, counts the set and offers "Do it live". Rendering "Ask your
+       * clinician before you add it back" above a Start button that hands them
+       * 4 × 6 is the app arguing with itself, and C33 is where that became
+       * visible. */}
+      {!removedReason && (
       <Card
         className="elev-sm"
         style={{
@@ -321,6 +331,7 @@ export default function ExerciseDetail({
           </button>
         </div>
       </Card>
+      )}
     </div>
   );
 }

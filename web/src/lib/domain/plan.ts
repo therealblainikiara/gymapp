@@ -166,16 +166,51 @@ export function buildPlan(settings: PlanSettings): PlanDay[] {
     );
     const per = Math.max(1, Math.round(dayBudget / grp.length));
     const exercises: PlanExercise[] = [];
+
+    /**
+     * Each movement at most once per day.
+     *
+     * The old loop indexed the pool with `(offset + k) % list.length` and ran
+     * `k` up to `per`, so once the filters shrank a group below the day's
+     * count it wrapped and prescribed the same movement again — C33 caught a
+     * legs day reading "Glute bridge, Glute bridge, Glute bridge, Glute
+     * bridge" and a core day alternating two movements twice. Every unit test
+     * passed: they all counted movements and checked flags, and a repeat is
+     * both correctly counted and correctly safe.
+     */
+    const taken = new Set<string>();
+    const add = (x: Exercise): boolean => {
+      if (taken.has(x.n) || exercises.length >= dayBudget) return false;
+      taken.add(x.n);
+      exercises.push({
+        name: x.n,
+        scheme: `${sets} × ${reps}`,
+        rest,
+        isFinisher: false,
+      });
+      return true;
+    };
+
     for (const m of grp) {
       const list = pool[m];
       const offset = (di * 2) % list.length;
-      for (let k = 0; k < per && exercises.length < dayBudget; k++) {
-        exercises.push({
-          name: list[(offset + k) % list.length].n,
-          scheme: `${sets} × ${reps}`,
-          rest,
-          isFinisher: false,
-        });
+      // `k < list.length`, not `k < per`: walk the pool at most once round.
+      let added = 0;
+      for (let k = 0; k < list.length && added < per; k++) {
+        if (add(list[(offset + k) % list.length])) added++;
+      }
+    }
+
+    // Short because the focus pool ran out — fill from everything else that
+    // survived `safe()`. A different safe movement is a better session than a
+    // repeat, and a shorter one is better than either being padded with lies
+    // about how much work it is.
+    if (exercises.length < dayBudget) {
+      const spare = MUSCLE_KEYS.flatMap((k) => pool[k]);
+      // Rotated by day, so a week that leans on the backfill still varies.
+      const start = spare.length ? (di * 3) % spare.length : 0;
+      for (let k = 0; k < spare.length && exercises.length < dayBudget; k++) {
+        add(spare[(start + k) % spare.length]);
       }
     }
     if (g.finisher && settings.session_len >= 20) {

@@ -41,7 +41,15 @@
   --color-accent-2-800: #314457;
   --color-accent-2-900: #1f2d3a;
 
-  --font-heading: "Barlow Condensed", system-ui, sans-serif;
+  /* Condensed fallbacks before the generic stack. The layout is drawn to
+     Barlow Condensed's metrics, and `system-ui` is not condensed — so when the
+     webfont above does not arrive (a blocked CDN, a privacy extension, an
+     offline first paint) every heading and label grows by roughly a fifth and
+     the bottom tab labels collide. C33 rendered exactly that. These names cost
+     nothing when Barlow Condensed loads and keep the proportions close to it
+     when it does not. */
+  --font-heading: "Barlow Condensed", "Roboto Condensed", "Liberation Sans Narrow",
+    "Arial Narrow", system-ui, sans-serif;
   --font-heading-weight: 600;
   --font-body: "Barlow", system-ui, sans-serif;
 

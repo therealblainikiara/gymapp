@@ -132,6 +132,57 @@ describe("injury filtering", () => {
     }
   });
 
+  /**
+   * C33. The generator used to index its pool modulo the pool's own length, so
+   * a group narrowed below the day's movement count simply wrapped: the
+   * browser pass rendered a legs day reading "Glute bridge" four times over,
+   * each with its own 4 × 6 and its own 120 s rest. Every test we had passed,
+   * because a repeat is correctly counted and correctly safe.
+   *
+   * The declaration below is the one that produced it — an osteoarthritic knee
+   * plus a knee injury plus pelvic-floor and blood-pressure removals leaves the
+   * legs pool with a single movement in it.
+   */
+  it("never prescribes the same movement twice in one day", () => {
+    const settings: PlanSettings = {
+      ...base,
+      goal: "strength",
+      muscles: ["legs", "back", "core"],
+      injuries: ["knee"],
+      conditions: ["oa_knee", "hypertension"],
+      menopause_stage: "peri",
+      bone_health: "osteopenia",
+      pelvic_floor: "occasional",
+    };
+    const days = buildPlan(settings);
+    // Guard against the assertion passing on an empty plan.
+    expect(days.flatMap((d) => d.exercises).length).toBeGreaterThan(0);
+    for (const day of days) {
+      const names = day.exercises.map((e) => e.name);
+      expect(new Set(names).size).toBe(names.length);
+    }
+  });
+
+  it("keeps days distinct rather than repeating, for every declaration", () => {
+    const bones: BoneHealth[] = ["none", "osteopenia", "osteoporosis"];
+    for (const bone_health of bones) {
+      for (const goal of Object.keys(GOALS) as Goal[]) {
+        for (const day of buildPlan({
+          ...base,
+          goal,
+          bone_health,
+          muscles: MUSCLE_KEYS,
+          injuries: ["knee", "shoulder"],
+        })) {
+          const names = day.exercises.map((e) => e.name);
+          expect(new Set(names).size, `${goal}/${bone_health}: ${names}`).toBe(
+            names.length,
+          );
+        }
+      }
+    }
+  });
+
   it("returns a usable plan even when a muscle group is filtered empty", () => {
     // Bodyweight + wrist injury guts the chest group; the day must still have
     // something safe in it rather than being blank.

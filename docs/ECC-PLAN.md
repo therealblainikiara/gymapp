@@ -35,6 +35,7 @@ honour. See `docs/ECC-AUDIT.md` §2 C-4.
 | M5 Buddy + media | C16 10% · C17 30% · C18 15% |
 | M6 Condition-aware | **C19–C25 done** · C26 deferred |
 | M7 Recovery parity | **Done** — C27–C32 |
+| M8 Seen in a browser | C33 done · C34, C35 open |
 
 ---
 
@@ -302,6 +303,74 @@ movement, and counted on Progress when they finish it.
 
 ---
 
+## Milestone 8 — Seen in a browser
+
+Everything M6 and M7 built had been tested and never rendered. This milestone
+is about the difference between the two.
+
+### C33 — The live browser pass *(done)*
+
+A dev-only preview harness (`web/src/lib/preview.ts`, two independent locks) that
+skips the auth gate and opens the local store against a fixed fake user, plus
+`scripts/preview-shots.mjs`, which drives Chromium over 12 routes at 390px and
+1440px against a declared peri + osteopenia + pelvic-floor + OA-knee +
+hypertension profile, and reports uncaught errors, console errors, sideways
+scroll, elements past the viewport, sub-12px type, sub-32px tap targets and
+empty `<main>`.
+
+Four defects, none of which a unit test could have found:
+
+- **The same movement four times in one session.** `buildPlan` wrapped its pool
+  index once the filters shrank a group below the day's count — a legs day
+  reading "Glute bridge" four times, each with its own scheme and rest. Fixed
+  with a per-day dedupe and a backfill; two regression tests, both of which fail
+  when the dedupe is removed.
+- **The bottom tab bar at every width.** An inline `display: flex` in
+  `app-shell.tsx` outranked the `@media (min-width: 920px)` rule that was meant
+  to hide it, so every desktop session showed two navigations.
+- **A withheld movement still offering a set timer**, under the banner telling
+  the user to ask their clinician first.
+- **Home scrolling sideways at 390px** — a flex item's `min-width: auto`.
+
+Plus two more. This container blocks Google Fonts, which exposed that the
+layout is drawn to Barlow Condensed's metrics with no condensed fallback, so a
+blocked CDN or a slow first paint collides the tab labels — condensed fallbacks
+added, with the arithmetic residual handed to C34. And **no stylesheet in the
+app mentioned `prefers-reduced-motion`**: every card slid and faded in on every
+navigation whatever the user's OS had been told. Now honoured, with the
+breathing orb deliberately exempt.
+
+Detail, and what the pass could *not* check, in `docs/C33-BROWSER-PASS.md`.
+Artifacts in `docs/preview/`.
+
+### C34 — The type scale, decided *(0%)*
+
+93 distinct elements measure under 12px: `.card-kicker` at 10px, `.card-meta`
+and the tags at 11px, Home's week-strip labels at **9px**. Faithfully ported
+from the Industry design system, and presbyopia is near-universal by 45 — the
+middle of this app's audience. Needs a deliberate decision, not an inherited
+default. *Accept:* a stated minimum size, applied through the tokens rather than
+per-component, and C33 re-run with the sub-12px count at whatever the decision
+allows.
+
+Carries the bottom tab bar with it. Seven labels, longest eight characters,
+55.7px each at 390px, and `PROGRESS` needs about 63px at 11.5px in any
+non-condensed face — so a blocked webfont collides them. C33 tightened the
+letter-spacing and added condensed fallbacks; the rest is type size, tab count
+or copy, which is this chunk's decision to make.
+
+### C35 — Tap targets to WCAG 2.2 AA *(0%)*
+
+`a.gym-rowbtn` — the movement rows on `/recover` and the exercise rows on
+`/train`, the app's primary targets — measure 320 × 21 and 309 × 21 against a
+24 × 24 AA minimum, and several `btn-ghost` buttons are 20–23px tall. The fix
+is a `min-height`; the cost is list density on every screen, so it is a design
+call. *Accept:* no interactive element under 24 × 24 in C33's report.
+
+**Gate for M8:** C33's script exits 0.
+
+---
+
 ## Carried forward
 
 ### M1 — Harden the prototype
@@ -376,6 +445,8 @@ custom SMTP.
 ## Concurrency map
 
 **Parallel-safe:**
+- C34 ∥ C35 — one is the type tokens, the other is row height; both re-run C33's
+  script to check themselves, and the script is read-only.
 - C27 ∥ C21 — different modules, no shared file.
 - C28 ∥ C21 — C28 is content authoring.
 - W1, W2 ∥ anything.

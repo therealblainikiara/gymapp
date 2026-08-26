@@ -24,6 +24,31 @@ a:hover {
     transform: none;
   }
 }
+
+/* Honour the operating system's reduced-motion setting.
+   Nothing did, before C33: every card slid and faded in on every navigation,
+   staggered, whatever the user had asked for. The browser pass rendered a
+   recovery card still half-transparent because its delayed entrance had not
+   finished — which is what the setting exists to prevent for people whose
+   vestibular systems answer that movement with nausea.
+
+   `animation: none` rather than a near-zero duration, so a `both` fill cannot
+   strand an element at its `from` keyframe.
+
+   `.breathing-orb` is excluded rather than overridden back: it is not
+   decoration, it is the pacer the user is breathing to, and stopping it would
+   remove the feature rather than calm it. Excluding it from the selector
+   leaves its own inline `animation` in charge — including the `none` it
+   already carries while the timer is not running. */
+@media (prefers-reduced-motion: reduce) {
+  *:not(.breathing-orb),
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
 @keyframes breathe {
   0% {
     transform: scale(0.68);
@@ -126,6 +151,14 @@ a:hover {
 /* Adaptive nav: side rail on desktop, bottom tabs on phone. */
 .gym-rail {
   display: none;
+}
+/* The tab bar's `display` lives here and not in the component's inline style.
+   An inline `display: flex` outranks any stylesheet rule, so the `display:
+   none` below could never fire and desktop rendered both navigations at once —
+   a second, redundant tab bar pinned across the bottom of every screen. Found
+   by C33's first desktop screenshot; invisible to every test we had. */
+.gym-tabs {
+  display: flex;
 }
 @media (min-width: 920px) {
   .gym-rail {

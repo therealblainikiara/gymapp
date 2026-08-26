@@ -180,8 +180,10 @@ export default function AppShell({ children }: { children: ReactNode }) {
         <nav
           className="gym-tabs"
           aria-label="Main"
+          // No `display` here — it belongs to `.gym-tabs` in globals.css, so
+          // the desktop media query can turn the bar off. An inline value
+          // cannot be overridden by a stylesheet and kept it on at every width.
           style={{
-            display: "flex",
             borderTop: "1px solid var(--color-divider)",
             background: "var(--color-surface)",
             position: "sticky",
@@ -203,7 +205,16 @@ export default function AppShell({ children }: { children: ReactNode }) {
                   fontFamily: "var(--font-heading)",
                   fontWeight: 600,
                   fontSize: 11.5,
-                  letterSpacing: "0.06em",
+                  // Seven labels have to fit 360px of phone. At 0.06em they
+                  // only did so in Barlow Condensed, and the webfont is not
+                  // guaranteed — a blocked CDN, a privacy extension or a slow
+                  // first paint all fall back to a face with wider metrics, and
+                  // C33 caught RECOVER/SOCIAL/PROGRESS running together into
+                  // one unreadable word. Tightened here, with condensed
+                  // fallbacks added to --font-heading in industry.css.
+                  letterSpacing: "0.02em",
+                  whiteSpace: "nowrap",
+                  minWidth: 0,
                   color: active
                     ? "var(--color-accent)"
                     : "color-mix(in srgb, var(--color-text) 55%, transparent)",
